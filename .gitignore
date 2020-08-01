@@ -1,1 +1,7 @@
 plugins/*.tgz
+build/
+.gradle/
+.idea/
+**xcuser**
+BuiltPlugin/
+src/ios/libplugin_admob.a
