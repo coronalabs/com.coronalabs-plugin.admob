@@ -20,3 +20,16 @@ dependencies {
     implementation ':Corona@aar'
     implementation 'com.google.android.gms:play-services-ads:19.3.0'
 }
+
+task exportAARToThePluginBinary(type: Copy) {
+    dependsOn assemble
+    from {
+        zipTree("$buildDir/outputs/aar/${project.name}-release.aar").matching {
+            include 'classes.jar'
+        }.singleFile
+    }
+    into "../../../plugins/2020.3607/android/"
+    rename "classes.jar", "plugin.admob.jar"
+}
+
+assemble.finalizedBy(exportAARToThePluginBinary)

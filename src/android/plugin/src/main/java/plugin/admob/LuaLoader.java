@@ -17,7 +17,6 @@ import com.ansca.corona.CoronaRuntimeTaskDispatcher;
 import com.ansca.corona.CoronaEnvironment;
 import com.ansca.corona.CoronaRuntime;
 import com.ansca.corona.CoronaRuntimeListener;
-import com.ansca.corona.CoronaBeacon;
 
 import org.json.JSONObject;
 
@@ -48,7 +47,6 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
-import static com.google.android.gms.ads.MobileAds.getVersionString;
 import static java.lang.Math.ceil;
 
 // Plugin imports
@@ -439,38 +437,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
           }
         }
       });
-    }
-  }
-
-  // Corona beacon listener
-  private class BeaconListener implements JavaFunction
-  {
-    // This method is executed when the Lua function is called
-    @Override
-    public int invoke(LuaState L)
-    {
-      // NOP (Debugging purposes only)
-      // Listener called but the function body should be empty for public release
-      return 0;
-    }
-  }
-
-  // Corona beacon wrapper
-  private void
-  sendToBeacon(final String eventType, final String placementID)
-  {
-    final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
-
-    // ignore if invalid activity
-    if (coronaActivity != null) {
-      // Create a new runnable object to invoke our activity
-      Runnable runnableActivity = new Runnable() {
-        public void run() {
-          CoronaBeacon.sendDeviceDataToBeacon(coronaRuntimeTaskDispatcher, PLUGIN_NAME, PLUGIN_VERSION, eventType, placementID, new BeaconListener());
-        }
-      };
-
-      coronaActivity.runOnUiThread(runnableActivity);
     }
   }
 
@@ -1441,9 +1407,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
               coronaEvent.put(EVENT_TYPE_KEY, TYPE_BANNER);
               coronaEvent.put(EVENT_DATA_KEY, data.toString());
               dispatchLuaEvent(coronaEvent);
-
-              // send data to our beacon
-              sendToBeacon(CoronaBeacon.IMPRESSION, banner.getAdUnitId());
             }
           }
         });
@@ -1681,8 +1644,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
         coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
         coronaEvent.put(EVENT_DATA_KEY, data.toString());
         dispatchLuaEvent(coronaEvent);
-
-        sendToBeacon(CoronaBeacon.REQUEST, interstitial.getAdUnitId());
       }
       catch (Exception e) {
         System.err.println();
@@ -1700,8 +1661,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
         coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
         coronaEvent.put(EVENT_DATA_KEY, data.toString());
         dispatchLuaEvent(coronaEvent);
-
-        sendToBeacon(CoronaBeacon.IMPRESSION, interstitial.getAdUnitId());
       }
       catch (Exception e) {
         System.err.println();
@@ -1796,8 +1755,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
         coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
         coronaEvent.put(EVENT_DATA_KEY, data.toString());
         dispatchLuaEvent(coronaEvent);
-
-        sendToBeacon(CoronaBeacon.REQUEST, adUnitId);
       }
       catch (Exception e) {
         System.err.println();
@@ -1815,8 +1772,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
         coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
         coronaEvent.put(EVENT_DATA_KEY, data.toString());
         dispatchLuaEvent(coronaEvent);
-
-        sendToBeacon(CoronaBeacon.IMPRESSION, adUnitId);
       }
       catch (Exception e) {
         System.err.println();
@@ -1924,8 +1879,15 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
     @Override
     public void onRewardedVideoCompleted() {
-      // NOP
-      // displayed/closed events are adequate
+      Log.d("AdMob Solar2D", "Rewarded Video Completed");
+      final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
+      coronaActivity.getRuntimeTaskDispatcher().send(new CoronaRuntimeTask() {
+        @Override
+        public void executeUsing(CoronaRuntime coronaRuntime) {
+          final com.ansca.corona.CoronaApiHandler cah = new com.ansca.corona.CoronaApiHandler(coronaActivity, coronaRuntime);
+          cah.onScreenLockStateChanged(false);
+        }
+      });
     }
   }
 
@@ -1954,9 +1916,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
         coronaEvent.put(EVENT_TYPE_KEY, TYPE_BANNER);
         coronaEvent.put(EVENT_DATA_KEY, data.toString());
         dispatchLuaEvent(coronaEvent);
-
-        String eventType = this.isLoaded ? CoronaBeacon.IMPRESSION : CoronaBeacon.REQUEST;
-        sendToBeacon(eventType, currentBanner.getAdUnitId());
 
         this.isLoaded = true;
       }
