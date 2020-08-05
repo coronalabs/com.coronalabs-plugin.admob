@@ -46,6 +46,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
@@ -135,7 +136,24 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
   private static int coronaListener = CoronaLua.REFNIL;
   private static CoronaRuntime coronaRuntime;
   private static CoronaRuntimeTaskDispatcher coronaRuntimeTaskDispatcher = null;
-    
+
+  private static void invalidateAllViews() {
+    final CoronaActivity activity = CoronaEnvironment.getCoronaActivity();
+    if(activity!=null) {
+      invalidateChildren(activity.getWindow().getDecorView());
+    }
+  }
+  private static void invalidateChildren(View v) {
+    if (v instanceof ViewGroup) {
+      ViewGroup viewgroup = (ViewGroup) v;
+      for (int i = 0; i < viewgroup.getChildCount(); i++) {
+        invalidateChildren(viewgroup.getChildAt(i));
+      }
+    }
+    v.invalidate();
+  }
+
+
   // -------------------------------------------------------
   // Plugin lifecycle events
   // -------------------------------------------------------
@@ -1795,24 +1813,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
     @Override
     public void onRewardedVideoAdClosed() {
-//      Log.d("AdMob Solar2D", "Rewarded Video Closed");
-//      final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
-//      if(coronaActivity != null) {
-//        final Context context = coronaActivity.getApplicationContext();
-//        if(context!=null) {
-//          KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-//          if (myKM !=null && !myKM.inKeyguardRestrictedInputMode()) {
-//            coronaActivity.getRuntimeTaskDispatcher().send(new CoronaRuntimeTask() {
-//              @Override
-//              public void executeUsing(CoronaRuntime coronaRuntime) {
-//                final com.ansca.corona.CoronaApiHandler cah = new com.ansca.corona.CoronaApiHandler(coronaActivity, coronaRuntime);
-//                cah.onScreenLockStateChanged(false);
-//              }
-//            });
-//          }
-//        }
-//      }
-
       // create data
       JSONObject data = new JSONObject();
       try {
@@ -1827,6 +1827,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
       catch (Exception e) {
         System.err.println();
       }
+      invalidateAllViews();
     }
 
     @Override
@@ -1899,7 +1900,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
     @Override
     public void onRewardedVideoCompleted() {
-      // video playback inside the ad is complete.
+      invalidateAllViews();
     }
   }
 
@@ -1970,6 +1971,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
       catch (Exception e) {
         System.err.println();
       }
+      invalidateAllViews();
     }
 
     @Override
