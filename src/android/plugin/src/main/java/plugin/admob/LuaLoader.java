@@ -35,6 +35,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import android.app.KeyguardManager;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Build;
@@ -1793,6 +1795,24 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
     @Override
     public void onRewardedVideoAdClosed() {
+//      Log.d("AdMob Solar2D", "Rewarded Video Closed");
+//      final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
+//      if(coronaActivity != null) {
+//        final Context context = coronaActivity.getApplicationContext();
+//        if(context!=null) {
+//          KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+//          if (myKM !=null && !myKM.inKeyguardRestrictedInputMode()) {
+//            coronaActivity.getRuntimeTaskDispatcher().send(new CoronaRuntimeTask() {
+//              @Override
+//              public void executeUsing(CoronaRuntime coronaRuntime) {
+//                final com.ansca.corona.CoronaApiHandler cah = new com.ansca.corona.CoronaApiHandler(coronaActivity, coronaRuntime);
+//                cah.onScreenLockStateChanged(false);
+//              }
+//            });
+//          }
+//        }
+//      }
+
       // create data
       JSONObject data = new JSONObject();
       try {
@@ -1879,15 +1899,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
     @Override
     public void onRewardedVideoCompleted() {
-      Log.d("AdMob Solar2D", "Rewarded Video Completed");
-      final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
-      coronaActivity.getRuntimeTaskDispatcher().send(new CoronaRuntimeTask() {
-        @Override
-        public void executeUsing(CoronaRuntime coronaRuntime) {
-          final com.ansca.corona.CoronaApiHandler cah = new com.ansca.corona.CoronaApiHandler(coronaActivity, coronaRuntime);
-          cah.onScreenLockStateChanged(false);
-        }
-      });
+      // video playback inside the ad is complete.
     }
   }
 
