@@ -5,7 +5,7 @@
 --  Copyright (c) 2016 Corona Labs Inc. All rights reserved.
 --
 
-local admob = require("plugin.admob")
+local _, admob = pcall(require, "plugin.admob")
 local widget = require("widget")
 local json = require("json")
 
@@ -119,7 +119,7 @@ local admobListener = function(event)
 end
 
 -- initialize AdMob
-admob.init(admobListener, {appId=appId, testMode=true, videoAdVolume = 0.1})
+if admob then admob.init(admobListener, {appId=appId, testMode=true, videoAdVolume = 0.1}) end
 
 testModeButton = widget.newButton {
   label = "Test mode: ON",
