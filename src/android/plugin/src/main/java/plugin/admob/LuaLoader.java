@@ -335,25 +335,37 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener
 
             if (object instanceof AdView) {
               AdView banner = (AdView)object;
-              banner.setAdListener(null);
-              banner.destroy();
+              if(banner!=null) {
+                banner.setAdListener(null);
+                banner.destroy();
+              }
             }
             else if (object instanceof  InterstitialAd) {
               InterstitialAd interstitial = (InterstitialAd)object;
-              CoronaAdmobInterstitialDelegate oldListener = (CoronaAdmobInterstitialDelegate)interstitial.getAdListener();
-              oldListener.interstitial = null;
-              interstitial.setAdListener(null);
+              if(interstitial!=null) {
+                CoronaAdmobInterstitialDelegate oldListener = (CoronaAdmobInterstitialDelegate) interstitial.getAdListener();
+                if(oldListener!=null) {
+                  oldListener.interstitial = null;
+                  interstitial.setAdListener(null);
+                }
+              }
             }
             else if (object instanceof  RewardedVideoAd) {
               RewardedVideoAd rewardedAd = (RewardedVideoAd)object;
-              CoronaAdmobRewardedDelegate oldListener = (CoronaAdmobRewardedDelegate)rewardedAd.getRewardedVideoAdListener();
-              oldListener.rewardedAd = null;
-              rewardedAd.setRewardedVideoAdListener(null);
-              rewardedAd.destroy(coronaActivity.getApplicationContext());
+              if(rewardedAd!=null) {
+                CoronaAdmobRewardedDelegate oldListener = (CoronaAdmobRewardedDelegate) rewardedAd.getRewardedVideoAdListener();
+                if(oldListener!=null) {
+                  oldListener.rewardedAd = null;
+                  rewardedAd.setRewardedVideoAdListener(null);
+                  rewardedAd.destroy(coronaActivity.getApplicationContext());
+                }
+              }
             }
           }
 
-          CoronaLua.deleteRef(runtime.getLuaState(), coronaListener);
+          if(runtime!=null) {
+            CoronaLua.deleteRef(runtime.getLuaState(), coronaListener);
+          }
           coronaListener = CoronaLua.REFNIL;
 
           admobObjects.clear();
