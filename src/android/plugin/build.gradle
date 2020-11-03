@@ -18,10 +18,10 @@ afterEvaluate {
 
 dependencies {
     implementation ':Corona@aar'
-    implementation 'com.google.android.gms:play-services-ads:19.3.0'
+    implementation 'com.google.android.gms:play-services-ads:19.5.0'
 }
 
-task exportAARToThePluginBinary(type: Copy) {
+    task exportAARToThePluginBinary(type: Copy) {
     dependsOn assemble
     from {
         zipTree("$buildDir/outputs/aar/${project.name}-release.aar").matching {
