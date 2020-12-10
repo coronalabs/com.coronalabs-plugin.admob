@@ -18,18 +18,31 @@ afterEvaluate {
 
 dependencies {
     implementation ':Corona@aar'
-    implementation 'com.google.android.gms:play-services-ads:19.5.0'
+    implementation 'com.google.android.gms:play-services-ads:19.6.0'
 }
 
-    task exportAARToThePluginBinary(type: Copy) {
+task exportAARToThePluginBinary {
     dependsOn assemble
-    from {
-        zipTree("$buildDir/outputs/aar/${project.name}-release.aar").matching {
-            include 'classes.jar'
-        }.singleFile
+    doLast {
+        copy {
+            from {
+                zipTree("$buildDir/outputs/aar/${project.name}-release.aar").matching {
+                    include 'classes.jar'
+                }.singleFile
+            }
+            into "../../../plugins/2020.3607/android/"
+            rename "classes.jar", "plugin.admob.jar"
+        }
     }
-    into "../../../plugins/2020.3607/android/"
-    rename "classes.jar", "plugin.admob.jar"
 }
 
-assemble.finalizedBy(exportAARToThePluginBinary)
+task createDataTgz(type: Tar) {
+    group 'Corona'
+    from "../../../plugins/2020.3607/android/"
+    destinationDirectory = file("$buildDir/outputs")
+    archiveFileName = 'data.tgz'
+    compression = Compression.GZIP
+    dependsOn exportAARToThePluginBinary
+}
+
+assemble.finalizedBy(createDataTgz)
