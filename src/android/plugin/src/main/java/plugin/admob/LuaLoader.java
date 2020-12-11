@@ -563,7 +563,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                     @Override
                     public void run() {
                         // initialize ads SDK
-                        MobileAds.initialize(coronaActivity.getApplicationContext(), new OnInitializationCompleteListener() {
+                        MobileAds.initialize(coronaActivity, new OnInitializationCompleteListener() {
                             @Override
                             public void onInitializationComplete(InitializationStatus initializationStatus) {
                                 // used in isSDKInitialized() to determine if plugin API calls can be made
@@ -771,7 +771,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                             switch (fAdType) {
                                 case TYPE_INTERSTITIAL:
                                     // initialize object and set delegate
-                                    InterstitialAd interstitial = new InterstitialAd(coronaActivity.getApplicationContext());
+                                    InterstitialAd interstitial = new InterstitialAd(coronaActivity);
                                     interstitial.setAdUnitId(fAdUnitId);
                                     interstitial.setAdListener(new CoronaAdmobInterstitialDelegate(interstitial));
 
@@ -800,7 +800,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                     break;
                                 case TYPE_REWARDEDVIDEO:
                                     // initialize object and set delegate
-                                    RewardedAd rewardedAd = new RewardedAd(coronaActivity.getApplicationContext(), fAdUnitId);
+                                    RewardedAd rewardedAd = new RewardedAd(coronaActivity, fAdUnitId);
                                     // save for future use
                                     admobObjects.put(TYPE_REWARDEDVIDEO, fAdUnitId);
                                     admobObjects.put(fAdUnitId, rewardedAd);

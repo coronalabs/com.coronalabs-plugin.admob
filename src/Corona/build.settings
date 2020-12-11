@@ -19,7 +19,6 @@ settings =
 
 	android =
 	{
-		minSdkVersion = 16,
         applicationChildElements =
         {
             [[
@@ -28,7 +27,6 @@ settings =
             ]],
         },
 
-        useGoogleServicesJson = true,
 		usesPermissions =
 		{
 			"android.permission.INTERNET",
