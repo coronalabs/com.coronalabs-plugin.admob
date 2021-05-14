@@ -435,6 +435,7 @@ AdMobPlugin::load(lua_State *L)
 		return 0;
 	}
 	
+	GADMaxAdContentRating maxAdRaiting = nil;
 	const char *adType = NULL;
 	const char *adUnitId = NULL;
 	bool childSafe = false;
@@ -474,6 +475,26 @@ AdMobPlugin::load(lua_State *L)
 				}
 				else {
 					logMsg(L, ERROR_MSG, MsgFormat(@"options.childSafe (boolean) expected, got %s", luaL_typename(L, -1)));
+					return 0;
+				}
+			}
+			else if (UTF8IsEqual(key, "maxAdContentRating")) {
+				if (lua_type(L, -1) == LUA_TSTRING) {
+					NSString *str = [NSString stringWithUTF8String:lua_tostring(L, -1)];
+					maxAdRaiting = (GADMaxAdContentRating)[(@{
+						@"G":GADMaxAdContentRatingGeneral,
+						@"PG":GADMaxAdContentRatingParentalGuidance,
+						@"T":GADMaxAdContentRatingTeen,
+						@"M":GADMaxAdContentRatingMatureAudience,
+						@"MA":GADMaxAdContentRatingMatureAudience,
+					}) objectForKey:str];
+					if(maxAdRaiting == nil) {
+						logMsg(L, ERROR_MSG, MsgFormat(@"options.maxAdContentRating must be one of string constants: 'G', 'PG', 'T' or 'MA', got: %s", lua_tostring(L, -1)));
+						return 0;
+					}
+				}
+				else {
+					logMsg(L, ERROR_MSG, MsgFormat(@"options.maxAdContentRating (string) expected, got %s", luaL_typename(L, -1)));
 					return 0;
 				}
 			}
@@ -564,6 +585,10 @@ AdMobPlugin::load(lua_State *L)
 	
 	// set child safe flag
 	[GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:childSafe];
+	
+	if(maxAdRaiting) {
+		[GADMobileAds.sharedInstance.requestConfiguration setMaxAdContentRating:maxAdRaiting];
+	}
 	
 	// check user consent
 	if (hasUserConsent != nil && ![hasUserConsent boolValue]) {

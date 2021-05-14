@@ -5,24 +5,12 @@
 > __Revision__          [REVISION_LABEL](REVISION_URL)
 > __Keywords__          ads, advertising, AdMob
 > __Platforms__			Android, iOS
-> __Sample__			[https://github.com/coronalabs/plugins-sample-admob](https://github.com/coronalabs/plugins-sample-admob)
 > --------------------- ------------------------------------------------------------------------------------------
 
 
 ## Overview
 
 The AdMob plugin allows developers to monetize users through AdMob static interstitial ads, video interstitial ads, rewarded video ads, and banner ads.
-
-<div class="docs-tip-outer docs-tip-color-alert">
-<div class="docs-tip-inner-left">
-<div class="fa fa-unlock-alt" style="font-size: 36px; margin-top: 2px; margin-left: 1px;"></div>
-</div>
-<div class="docs-tip-inner-right">
-
-The AdMob plugin is only available to users who have purchased the [Corona Professional Bundle](https://marketplace.coronalabs.com/products/corona-pro) or the [AdMob](https://marketplace.coronalabs.com/plugin/admob) plugin. This plugin lets you keep 100% of your ad revenue and allows you to manage your account/settings with AdMob directly.
-
-</div>
-</div>
 
 <div class="guide-notebox-imp">
 <div class="notebox-title-imp">Important</div>
@@ -84,7 +72,7 @@ settings =
 	iphone =
 	{
 		plist = {
-			GADApplicationIdentifier = "ca-app-pub-7897780601981890~3573459965",
+			GADApplicationIdentifier = "[YOUR_ADMOB_APP_ID]",
 			SKAdNetworkItems = {
 				{
 					SKAdNetworkIdentifier = "cstr6suwn9.skadnetwork",
@@ -105,7 +93,9 @@ settings =
 
 <div class="guide-notebox-imp">
 <div class="notebox-title-imp">Important</div>
-	Add [Apple Tracking Transparency][plugin.att] plugin to your project as well.
+
+Add [App Tracking Transparency][plugin.att] plugin to your project as well.
+
 </div>
 
 
@@ -125,3 +115,25 @@ For Android, the following permissions/features are automatically added when usi
 * `"android.permission.ACCESS_NETWORK_STATE"`
 
 </div>
+
+
+## Google AdMob Mediation setup
+
+AdMob plugin can be used to serve ads from other networks to give your monetization a boost on Android.
+
+To use this feature, you would have to connect each individual network manually using AdMob interface. List of available networks with links to set up instructions can be found [here](https://developers.google.com/admob/android/mediate#mediation-networks).
+
+Most of the networks would have "Import the SDK and adapter" step. To implement it, add Gradle dependencies to special file `corona.gradle` within `AndroidResource` directory inside your Solar2D Project.
+
+For example, to use Facebook and AppLoving networks contents of the `AndroidResources/corona.gradle` file should be:
+
+```
+dependencies {
+    implementation 'com.google.ads.mediation:facebook:6.2.0.0'
+    implementation 'com.google.ads.mediation:applovin:9.14.5.0'
+}
+```
+
+## Sample project
+
+* [View on GitHub](https://github.com/coronalabs/plugins-sample-admob)

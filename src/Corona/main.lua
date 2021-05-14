@@ -175,7 +175,8 @@ local loadInterstitialButton = widget.newButton {
     admob.load("interstitial", {
       adUnitId=adUnits.interstitial,
       testMode=testMode,
-      keywords={"games", "platformer", "toys"}
+      keywords={"games", "platformer", "toys"},
+      maxAdContentRating="M",
     })
   end
 }

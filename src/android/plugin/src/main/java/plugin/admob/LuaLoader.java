@@ -626,6 +626,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             String adType;
             String adUnitId = null;
             boolean childSafe = false;
+            String maxAdContentRating = null;
             boolean designedForFamilies = false;
             boolean localTestMode = false;
             ArrayList<String> keywords = new ArrayList<>();
@@ -659,6 +660,32 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 childSafe = luaState.toBoolean(-1);
                             } else {
                                 logMsg(ERROR_MSG, "options.childSafe (boolean) expected, got " + luaState.typeName(-1));
+                                return 0;
+                            }
+                            break;
+                        case "maxAdContentRating":
+                            if (luaState.type(-1) == LuaType.STRING) {
+                                maxAdContentRating = luaState.toString(-1);
+                                switch (maxAdContentRating) {
+                                    case "G":
+                                        maxAdContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_G;
+                                        break;
+                                    case "PG":
+                                        maxAdContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_PG;
+                                        break;
+                                    case "T":
+                                        maxAdContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_T;
+                                        break;
+                                    case "M":
+                                    case "MA":
+                                        maxAdContentRating = RequestConfiguration.MAX_AD_CONTENT_RATING_MA;
+                                        break;
+                                    default:
+                                        logMsg(ERROR_MSG, "options.maxAdContentRating must be one of string constants: 'G', 'PG', 'T' or 'M', got: " + luaState.toString(-1));
+                                        return 0;
+                                }
+                            } else {
+                                logMsg(ERROR_MSG, "options.maxAdContentRating (string) expected, got " + luaState.typeName(-1));
                                 return 0;
                             }
                             break;
@@ -751,8 +778,11 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 builder.addKeyword(keywords.get(keywordIndex));
                 keywordIndex++;
             }
-
-            MobileAds.setRequestConfiguration(MobileAds.getRequestConfiguration().toBuilder().setTagForChildDirectedTreatment(childSafe ? RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE : RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE).build());
+            RequestConfiguration.Builder configurator = MobileAds.getRequestConfiguration().toBuilder().setTagForChildDirectedTreatment(childSafe ? RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE : RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
+            if(maxAdContentRating != null) {
+                configurator.setMaxAdContentRating(maxAdContentRating);
+            }
+            MobileAds.setRequestConfiguration(configurator.build());
 
             AdRequest request = builder.build();
 
