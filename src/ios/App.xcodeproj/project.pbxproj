@@ -63,7 +63,16 @@
 		E640B2F41BFC00BA0031FAE9 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E640B2F31BFC00BA0031FAE9 /* Photos.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		F51C66D61EE0D3B20040E4BE /* libplugin_admob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A4E253E2166DE7C800DCDC2C /* libplugin_admob.a */; };
 		F56457D91FA108F500EC8C29 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F56712391F73451B006B502D /* Images.xcassets */; };
+		F5AA2F7F26BC607500B9196A /* GoogleMobileAds.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7826BC607500B9196A /* GoogleMobileAds.framework */; };
+		F5AA2F8126BC607500B9196A /* GoogleAppMeasurement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7926BC607500B9196A /* GoogleAppMeasurement.framework */; };
+		F5AA2F8326BC607500B9196A /* nanopb.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7A26BC607500B9196A /* nanopb.framework */; };
+		F5AA2F8426BC607500B9196A /* nanopb.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7A26BC607500B9196A /* nanopb.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		F5BB41531BC42ACF0033F6FA /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BB41521BC42ACF0033F6FA /* CoreText.framework */; };
+		F5C7971126BC7C71005691C1 /* GoogleUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7726BC607500B9196A /* GoogleUtilities.framework */; };
+		F5C7971226BC7C71005691C1 /* GoogleUtilities.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F5AA2F7726BC607500B9196A /* GoogleUtilities.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F5C7971426BC7CBB005691C1 /* FBLPromises.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5C7971326BC7CBB005691C1 /* FBLPromises.framework */; };
+		F5C7971526BC7CBB005691C1 /* FBLPromises.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F5C7971326BC7CBB005691C1 /* FBLPromises.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F5C7971826BC8592005691C1 /* AppTrackingTransparency.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5C7971726BC8592005691C1 /* AppTrackingTransparency.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		F5C9F4811ED39AD100D34A2D /* _CoronaSplashScreen.png in Resources */ = {isa = PBXBuildFile; fileRef = C277D3B51EBB9F8E00966BA1 /* _CoronaSplashScreen.png */; };
 		F5E548091BE7FF0200091810 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5E548081BE7FF0200091810 /* GameController.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 /* End PBXBuildFile section */
@@ -84,6 +93,22 @@
 			remoteInfo = plugin_library;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F5AA2F8526BC607500B9196A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				F5C7971526BC7CBB005691C1 /* FBLPromises.framework in Embed Frameworks */,
+				F5C7971226BC7C71005691C1 /* GoogleUtilities.framework in Embed Frameworks */,
+				F5AA2F8426BC607500B9196A /* nanopb.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A447B60E165D72FB009EA762 /* AppCoronaDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppCoronaDelegate.h; sourceTree = SOURCE_ROOT; };
@@ -138,7 +163,14 @@
 		F55829801ED23E1200E5808C /* CoronaApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = CoronaApp.xcconfig; sourceTree = "<group>"; };
 		F56712391F73451B006B502D /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ../Corona/Images.xcassets; sourceTree = "<group>"; };
 		F572F8191EE06E45001BC814 /* CoronaNative.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CoronaNative.xcconfig; sourceTree = "<group>"; };
+		F5AA2F7626BC607500B9196A /* UserMessagingPlatform.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserMessagingPlatform.framework; path = EmbeddedFrameworks/UserMessagingPlatform.framework; sourceTree = "<group>"; };
+		F5AA2F7726BC607500B9196A /* GoogleUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleUtilities.framework; path = EmbeddedFrameworks/GoogleUtilities.framework; sourceTree = "<group>"; };
+		F5AA2F7826BC607500B9196A /* GoogleMobileAds.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleMobileAds.framework; path = EmbeddedFrameworks/GoogleMobileAds.framework; sourceTree = "<group>"; };
+		F5AA2F7926BC607500B9196A /* GoogleAppMeasurement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleAppMeasurement.framework; path = EmbeddedFrameworks/GoogleAppMeasurement.framework; sourceTree = "<group>"; };
+		F5AA2F7A26BC607500B9196A /* nanopb.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = nanopb.framework; path = EmbeddedFrameworks/nanopb.framework; sourceTree = "<group>"; };
 		F5BB41521BC42ACF0033F6FA /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
+		F5C7971326BC7CBB005691C1 /* FBLPromises.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBLPromises.framework; path = EmbeddedFrameworks/FBLPromises.framework; sourceTree = "<group>"; };
+		F5C7971726BC8592005691C1 /* AppTrackingTransparency.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppTrackingTransparency.framework; path = System/Library/Frameworks/AppTrackingTransparency.framework; sourceTree = SDKROOT; };
 		F5E548081BE7FF0200091810 /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -147,7 +179,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5AA2F7F26BC607500B9196A /* GoogleMobileAds.framework in Frameworks */,
 				F51C66D61EE0D3B20040E4BE /* libplugin_admob.a in Frameworks */,
+				F5AA2F8326BC607500B9196A /* nanopb.framework in Frameworks */,
 				E640B2F41BFC00BA0031FAE9 /* Photos.framework in Frameworks */,
 				E640B2F21BFC00B00031FAE9 /* AssetsLibrary.framework in Frameworks */,
 				F5BB41531BC42ACF0033F6FA /* CoreText.framework in Frameworks */,
@@ -162,9 +196,11 @@
 				A484117B15128D5D0074BD57 /* CFNetwork.framework in Frameworks */,
 				A484112215114F700074BD57 /* CoreGraphics.framework in Frameworks */,
 				A484117C15128D5D0074BD57 /* CoreLocation.framework in Frameworks */,
+				F5AA2F8126BC607500B9196A /* GoogleAppMeasurement.framework in Frameworks */,
 				A484117D15128D5D0074BD57 /* CoreMedia.framework in Frameworks */,
 				A484117E15128D5D0074BD57 /* CoreMotion.framework in Frameworks */,
 				A484112015114F700074BD57 /* Foundation.framework in Frameworks */,
+				F5C7971426BC7CBB005691C1 /* FBLPromises.framework in Frameworks */,
 				A484117F15128D5D0074BD57 /* GameKit.framework in Frameworks */,
 				F5E548091BE7FF0200091810 /* GameController.framework in Frameworks */,
 				A484118015128D5D0074BD57 /* ImageIO.framework in Frameworks */,
@@ -176,11 +212,13 @@
 				A484118515128D5D0074BD57 /* MobileCoreServices.framework in Frameworks */,
 				A484118615128D5D0074BD57 /* OpenAL.framework in Frameworks */,
 				A484112615114F700074BD57 /* OpenGLES.framework in Frameworks */,
+				F5C7971826BC8592005691C1 /* AppTrackingTransparency.framework in Frameworks */,
 				A484118715128D5D0074BD57 /* QuartzCore.framework in Frameworks */,
 				A484118815128D5D0074BD57 /* Security.framework in Frameworks */,
 				A484118915128D5D0074BD57 /* StoreKit.framework in Frameworks */,
 				A484118A15128D5D0074BD57 /* SystemConfiguration.framework in Frameworks */,
 				A4E2537F166AE3DC00DCDC2C /* Twitter.framework in Frameworks */,
+				F5C7971126BC7C71005691C1 /* GoogleUtilities.framework in Frameworks */,
 				A484111E15114F700074BD57 /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -231,6 +269,13 @@
 		A484111C15114F700074BD57 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F5C7971726BC8592005691C1 /* AppTrackingTransparency.framework */,
+				F5C7971326BC7CBB005691C1 /* FBLPromises.framework */,
+				F5AA2F7926BC607500B9196A /* GoogleAppMeasurement.framework */,
+				F5AA2F7826BC607500B9196A /* GoogleMobileAds.framework */,
+				F5AA2F7726BC607500B9196A /* GoogleUtilities.framework */,
+				F5AA2F7A26BC607500B9196A /* nanopb.framework */,
+				F5AA2F7626BC607500B9196A /* UserMessagingPlatform.framework */,
 				E640B2F31BFC00BA0031FAE9 /* Photos.framework */,
 				E640B2F11BFC00B00031FAE9 /* AssetsLibrary.framework */,
 				F5E548081BE7FF0200091810 /* GameController.framework */,
@@ -318,6 +363,7 @@
 				A484111615114F700074BD57 /* Frameworks */,
 				A4841162151268030074BD57 /* Compile Corona Project */,
 				A484118B15128E320074BD57 /* build.settings to Info.plist */,
+				F5AA2F8526BC607500B9196A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -339,6 +385,7 @@
 				TargetAttributes = {
 					A484111815114F700074BD57 = {
 						DevelopmentTeam = BG2J43EA88;
+						ProvisioningStyle = Automatic;
 					};
 					F597AC6E1ED8CA3E0085F5E5 = {
 						CreatedOnToolsVersion = 8.3.2;
@@ -582,15 +629,23 @@
 			baseConfigurationReference = F55829801ED23E1200E5808C /* CoronaApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = BG2J43EA88;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EmbeddedFrameworks",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				"GCC_THUMB_SUPPORT[arch=armv6]" = "";
 				INFOPLIST_FILE = "App-Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cornalabs.test;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.cornalabs.admob.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -603,15 +658,23 @@
 			baseConfigurationReference = F55829801ED23E1200E5808C /* CoronaApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = BG2J43EA88;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EmbeddedFrameworks",
+				);
 				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Prefix.pch;
 				"GCC_THUMB_SUPPORT[arch=armv6]" = "";
 				INFOPLIST_FILE = "App-Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cornalabs.test;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.cornalabs.admob.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SEPARATE_STRIP = YES;
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";

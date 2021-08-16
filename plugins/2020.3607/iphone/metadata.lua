@@ -4,8 +4,8 @@ local metadata =
 	{
 		format = 'staticLibrary',
 		staticLibs = { 'plugin_admob', },
-		frameworks = { 'GoogleAppMeasurement', 'GoogleMobileAds', 'FBLPromises', 'GoogleUtilities', 'nanopb', 'JavascriptCore'},
-		frameworksOptional = {},
+		frameworks = { 'GoogleAppMeasurement', 'GoogleMobileAds', 'FBLPromises', 'GoogleUtilities', 'nanopb', },
+		frameworksOptional = { 'AppTrackingTransparency', },
 	},
 }
 

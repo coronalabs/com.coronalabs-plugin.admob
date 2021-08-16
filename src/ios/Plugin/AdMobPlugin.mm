@@ -16,6 +16,7 @@
 #import "CoronaLua.h"
 #import "CoronaLibrary.h"
 #import "CoronaLuaIOS.h"
+#import <AppTrackingTransparency/AppTrackingTransparency.h>
 
 // AdMob
 #import "UIColor+HexString.h"
@@ -83,7 +84,6 @@ static NSMutableDictionary *admobObjects;
 
 // object dictionary keys
 static NSString * const TESTMODE_KEY    = @"testMode";
-static NSString * const TEST_DEVICE_KEY = @"testDevice";
 static NSString * const Y_RATIO_KEY     = @"yRatio";        // used to calculate Corona -> UIKit coordinate ratio
 
 // event data keys
@@ -117,15 +117,16 @@ static NSString * const DATA_ADUNIT_ID_KEY = @"adUnitId";
 
 @end
 
-@interface CoronaAdMobDelegate: NSObject <GADInterstitialDelegate, GADBannerViewDelegate, GADRewardedAdDelegate>
+@interface CoronaAdMobDelegate: NSObject <GADBannerViewDelegate, GADFullScreenContentDelegate>
 
 @property (nonatomic, assign) CoronaLuaRef coronaListener;             // Reference to the Lua listener
 @property (nonatomic, assign) id<CoronaRuntime> coronaRuntime;         // Pointer to the Corona runtime
 
 - (void)dispatchLuaEvent:(NSDictionary *)dict;
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad;
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad reward:(GADAdReward *)reward;
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad reward:(GADAdReward *)reward error:(NSError *)error;
++ (NSString *)getJSONStringForAd:(NSObject *)ad reward:(GADAdReward *)reward error:(NSError *)error;
++ (NSString *)getJSONStringForAd:(NSObject *)ad reward:(GADAdReward *)reward;
++ (NSString *)getJSONStringForAd:(NSObject *)ad error:(NSError *)error;
++ (NSString *)getJSONStringForAd:(NSObject *)ad;
 
 @end
 
@@ -371,23 +372,6 @@ AdMobPlugin::init(lua_State *L)
 		return 0;
 	}
 	
-	// generate Google Test ID for current device
-	if (testMode) {
-		NSUUID* deviceID = [[ASIdentifierManager sharedManager] advertisingIdentifier];
-		const char *deviceStr = [deviceID.UUIDString UTF8String];
-		unsigned char digest[16];
-		CC_MD5(deviceStr, (CC_LONG)strlen(deviceStr), digest);
-		
-		NSMutableString *admobDeviceID = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
-		
-		for(int i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
-			[admobDeviceID appendFormat:@"%02x", digest[i]];
-		}
-		
-		NSLog(@"%s: Generated AdMob Test ID '%@'", PLUGIN_NAME, admobDeviceID);
-		admobObjects[TEST_DEVICE_KEY] = [NSString stringWithString:admobDeviceID];
-	}
-	
 	// log plugin version to device log
 	NSLog(@"%s: %s (SDK: %@)", PLUGIN_NAME, PLUGIN_VERSION, GADMobileAds.sharedInstance.sdkVersion);
 	
@@ -397,12 +381,31 @@ AdMobPlugin::init(lua_State *L)
 	// initialize the SDK
 	[GADMobileAds.sharedInstance disableSDKCrashReporting];
 	[GADMobileAds.sharedInstance disableAutomatedInAppPurchaseReporting];
-	[GADMobileAds.sharedInstance startWithCompletionHandler:^(GADInitializationStatus * _Nonnull status) {
-		NSDictionary *coronaEvent = @{
-			@(CoronaEventPhaseKey()) : PHASE_INIT
-		};
-		[admobDelegate dispatchLuaEvent:coronaEvent];
-	}];
+	bool noAtt=true;
+	if (@available(iOS 14, tvOS 14, *)) {
+		if([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSUserTrackingUsageDescription"]) {
+			noAtt = false;
+			[ATTrackingManager requestTrackingAuthorizationWithCompletionHandler:^(ATTrackingManagerAuthorizationStatus status) {
+				[[NSOperationQueue mainQueue] addOperationWithBlock:^{
+					[GADMobileAds.sharedInstance startWithCompletionHandler:^(GADInitializationStatus * _Nonnull status) {
+						NSDictionary *coronaEvent = @{
+							@(CoronaEventPhaseKey()) : PHASE_INIT
+						};
+						[admobDelegate dispatchLuaEvent:coronaEvent];
+					}];
+				}];
+			}];
+		}
+	}
+	if(noAtt) {
+		[GADMobileAds.sharedInstance startWithCompletionHandler:^(GADInitializationStatus * _Nonnull status) {
+			NSDictionary *coronaEvent = @{
+				@(CoronaEventPhaseKey()) : PHASE_INIT
+			};
+			[admobDelegate dispatchLuaEvent:coronaEvent];
+		}];
+	}
+
 	
 	// set desired volume for video ads. Default is 1.0
 	[GADMobileAds sharedInstance].applicationVolume = videoAdVolume;
@@ -613,9 +616,32 @@ AdMobPlugin::load(lua_State *L)
 	}
 	
 	if ((localTestModeIsSet && localTestMode) || ((!localTestModeIsSet) && globalTestMode)) {
-		NSString *admobDeviceId = admobObjects[TEST_DEVICE_KEY];
-		GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[kGADSimulatorID, admobDeviceId];
-		NSLog(@"%s: Test mode active for device '%@'", PLUGIN_NAME, admobDeviceId);
+		
+		NSUUID* deviceID = [[ASIdentifierManager sharedManager] advertisingIdentifier];
+
+		const char *deviceStr = [deviceID.UUIDString UTF8String];
+		unsigned char digest[16];
+		
+		CC_MD5(deviceStr, (CC_LONG)strlen(deviceStr), digest);
+		
+		NSMutableString *admobDeviceID = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+		
+		for(int i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+			[admobDeviceID appendFormat:@"%02x", digest[i]];
+		}
+		
+		NSUUID* vendorId = [[UIDevice currentDevice] identifierForVendor];
+		deviceStr = [vendorId.UUIDString UTF8String];
+		CC_MD5(deviceStr, (CC_LONG)strlen(deviceStr), digest);
+		
+		NSMutableString *admobVendorDeviceID = [NSMutableString stringWithCapacity:CC_MD5_DIGEST_LENGTH * 2];
+		
+		for(int i = 0; i < CC_MD5_DIGEST_LENGTH; i++) {
+			[admobVendorDeviceID appendFormat:@"%02x", digest[i]];
+		}
+		
+		GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[kGADSimulatorID, admobDeviceID, admobVendorDeviceID];
+		NSLog(@"%s: Test mode active for device '%@'", PLUGIN_NAME, GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers);
 	}
 	
 	// check old adInstance (if available)
@@ -627,32 +653,49 @@ AdMobPlugin::load(lua_State *L)
 	
 	// load specified ad type
 	if (UTF8IsEqual(adType, TYPE_INTERSTITIAL)) {
-		// initialize object and set delegate
-		GADInterstitial *interstitial = [[GADInterstitial alloc] initWithAdUnitID:@(adUnitId)];
-		[interstitial setDelegate: admobDelegate];
-		
 		// create ad instance object (stores additional info about the ad not available in GADInterstitial)
-		adInstance = [[CoronaAdMobAdInstance alloc] initWithAd:interstitial adType:@(adType)];
+		adInstance = [[[CoronaAdMobAdInstance alloc] initWithAd:nil adType:@(adType)] autorelease];
 		
 		// save for future use
 		admobObjects[@(TYPE_INTERSTITIAL)] = @(adUnitId);
 		admobObjects[@(adUnitId)] = adInstance;
-		
-		// load the interstitial
-		[interstitial loadRequest:request];
+
+		[GADInterstitialAd loadWithAdUnitID:@(adUnitId) request:request completionHandler:^(GADInterstitialAd * _Nullable interstitialAd, NSError * _Nullable error) {
+			if(error) {
+				NSDictionary *coronaEvent = @{
+					@(CoronaEventPhaseKey()) : PHASE_FAILED,
+					@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
+					@(CoronaEventIsErrorKey()) : @(true),
+					@(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+					CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:interstitialAd error:error]
+				};
+				[admobDelegate dispatchLuaEvent:coronaEvent];
+				
+				adInstance.isLoaded = false;
+			} else {
+				adInstance.adInstance = interstitialAd;
+				// send Corona Lua event
+				NSDictionary *coronaEvent = @{
+					@(CoronaEventPhaseKey()) : PHASE_LOADED,
+					@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
+					CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:interstitialAd error:nil]
+				};
+				[admobDelegate dispatchLuaEvent:coronaEvent];
+				
+				adInstance.isLoaded = true;
+			}
+		}];
 	}
 	else if (UTF8IsEqual(adType, TYPE_REWARDEDVIDEO)) {
-		GADRewardedAd *rewardedAd = [[[GADRewardedAd alloc] initWithAdUnitID:@(adUnitId)] autorelease];
-		
+	
 		// create ad instance object (stores additional info about the ad not available in GADRewardedAd)
-		adInstance = [[CoronaAdMobAdInstance alloc] initWithAd:rewardedAd adType:@(adType)];
+		adInstance = [[[CoronaAdMobAdInstance alloc] initWithAd:nil adType:@(adType)] autorelease];
 		
 		// save for future use
 		admobObjects[@(TYPE_REWARDEDVIDEO)] = @(adUnitId);
 		admobObjects[@(adUnitId)] = adInstance;
 		
-		// load the rewarded ad
-		[rewardedAd loadRequest:request completionHandler:^(GADRequestError * _Nullable error) {
+		[GADRewardedAd loadWithAdUnitID:@(adUnitId) request:request completionHandler:^(GADRewardedAd * _Nullable rewardedAd, NSError * _Nullable error) {
 			if (error) {
 				// send Corona Lua event
 				NSDictionary *coronaEvent = @{
@@ -660,22 +703,24 @@ AdMobPlugin::load(lua_State *L)
 					@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
 					@(CoronaEventIsErrorKey()) : @(true),
 					@(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
-					CORONA_EVENT_DATA_KEY : [admobDelegate getJSONStringForRewardedAd:rewardedAd reward:nil error:error]
+					CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedAd reward:nil error:error]
 				};
 				[admobDelegate dispatchLuaEvent:coronaEvent];
 				
 				adInstance.isLoaded = false;
 			} else {
+				adInstance.adInstance = rewardedAd;
 				// send Corona Lua event
 				NSDictionary *coronaEvent = @{
 					@(CoronaEventPhaseKey()) : PHASE_LOADED,
 					@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
-					CORONA_EVENT_DATA_KEY : [admobDelegate getJSONStringForRewardedAd:rewardedAd]
+					CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedAd]
 				};
 				[admobDelegate dispatchLuaEvent:coronaEvent];
 				
 				adInstance.isLoaded = true;
 			}
+
 		}];
 	}
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
@@ -866,8 +911,8 @@ AdMobPlugin::show(lua_State *L)
 	
 	// show specified ad type
 	if (UTF8IsEqual(adType, TYPE_INTERSTITIAL)) {
-		GADInterstitial *interstitial = (GADInterstitial *)adInstance.adInstance;
-		if (! interstitial.isReady) {
+		GADInterstitialAd *interstitial = (GADInterstitialAd *)adInstance.adInstance;
+		if (! adInstance.isLoaded ) {
 			logMsg(L, WARNING_MSG, MsgFormat(@"Interstitial not loaded for adUnitId '%@'", adUnitId));
 			return 0;
 		}
@@ -876,12 +921,20 @@ AdMobPlugin::show(lua_State *L)
 	}
 	else if (UTF8IsEqual(adType, TYPE_REWARDEDVIDEO)) {
 		GADRewardedAd *rewardedAd = (GADRewardedAd *)adInstance.adInstance;
-		if (! rewardedAd.isReady) {
+		if (! adInstance.isLoaded ) {
 			logMsg(L, WARNING_MSG, MsgFormat(@"Rewarded Video not loaded for adUnitId '%@'", adUnitId));
 			return 0;
 		}
 		
-		[rewardedAd presentFromRootViewController:library.coronaViewController delegate:admobDelegate];
+		[rewardedAd presentFromRootViewController:library.coronaViewController userDidEarnRewardHandler:^{
+			// send Corona Lua event
+			NSDictionary *coronaEvent = @{
+				@(CoronaEventPhaseKey()) : PHASE_REWARD,
+				@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
+				CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedAd reward:rewardedAd.adReward]
+			};
+			[admobDelegate dispatchLuaEvent:coronaEvent];
+		}];
 	}
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
 		GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
@@ -923,7 +976,7 @@ AdMobPlugin::show(lua_State *L)
 		});
 		
 		// send Lua event
-		[admobDelegate adViewWillPresentScreen:banner];
+		[admobDelegate bannerViewWillPresentScreen:banner];
 	}
 	
 	return 0;
@@ -978,7 +1031,7 @@ AdMobPlugin::hide(lua_State *L)
 	[banner removeFromSuperview];
 	
 	// send Lua event
-	[admobDelegate adViewDidDismissScreen:banner];
+	[admobDelegate bannerViewDidDismissScreen:banner];
 	
 	return 0;
 }
@@ -1196,23 +1249,7 @@ AdMobPlugin::isLoaded(lua_State *L)
 	
 	if (adUnitId != nil) {
 		CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
-		
-		if (adInstance != nil) {
-			// test specified ad type
-			if (UTF8IsEqual(adType, TYPE_INTERSTITIAL)) {
-				GADInterstitial *interstitial = (GADInterstitial *)adInstance.adInstance;
-				isLoaded = (interstitial != nil) ? interstitial.isReady : false;
-			}
-			else if (UTF8IsEqual(adType, TYPE_REWARDEDVIDEO)) {
-				GADRewardedAd *rewardedAd = (GADRewardedAd *)adInstance.adInstance;
-				isLoaded = (rewardedAd != nil) ? rewardedAd.isReady : false;
-			}
-			else if (UTF8IsEqual(adType, TYPE_BANNER)) {
-				GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
-				// need to use adInstance here since GADBannerView doesn't have an isLoaded property
-				isLoaded = (banner != nil) ? adInstance.isLoaded : false;
-			}
-		}
+		isLoaded = adInstance != nil && adInstance.adInstance != nil && adInstance.isLoaded;
 	}
 	
 	lua_pushboolean(L, isLoaded);
@@ -1235,34 +1272,9 @@ AdMobPlugin::isLoaded(lua_State *L)
 	return self;
 }
 
-// create JSON string from interstitial info and error
-- (NSString *)getJSONStringForInterstitial:(GADInterstitial *)ad error:(GADRequestError *)error
-{
-	NSMutableDictionary *dataDictionary = [NSMutableDictionary new];
-	if (error != nil) {
-		dataDictionary[DATA_ERRORMSG_KEY] = [error localizedDescription];
-		dataDictionary[DATA_ERRORCODE_KEY] = @([error code]);
-	}
-	
-	dataDictionary[DATA_ADUNIT_ID_KEY] = ad.adUnitID;
-	
-	NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataDictionary options:0 error:nil];
-	
-	return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-}
-
 // create JSON string from rewarded ad info and error
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad
-{
-	return [self getJSONStringForRewardedAd:ad reward:nil];
-}
 
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad reward:(GADAdReward *)reward
-{
-	return [self getJSONStringForRewardedAd:ad reward:reward error:nil];
-}
-
-- (NSString *)getJSONStringForRewardedAd:(GADRewardedAd *)ad reward:(GADAdReward *)reward error:(NSError *)error
++ (NSString *)getJSONStringForAd:(NSObject *)ad reward:(GADAdReward *)reward error:(NSError *)error
 {
 	NSMutableDictionary *dataDictionary = [NSMutableDictionary new];
 	
@@ -1276,28 +1288,21 @@ AdMobPlugin::isLoaded(lua_State *L)
 		dataDictionary[REWARD_AMOUNT] = [reward amount];
 	}
 	
-	NSString *adUnitId = admobObjects[@(TYPE_REWARDEDVIDEO)];
-	dataDictionary[DATA_ADUNIT_ID_KEY] = adUnitId;
+	dataDictionary[DATA_ADUNIT_ID_KEY] = [CoronaAdMobDelegate placementForAd:ad];
 	
 	NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataDictionary options:0 error:nil];
 	
 	return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 }
 
-// create JSON string from banner info and error
-- (NSString *)getJSONStringForBanner:(GADBannerView *)banner error:(GADRequestError *)error
-{
-	NSMutableDictionary *dataDictionary = [NSMutableDictionary new];
-	if (error != nil) {
-		dataDictionary[DATA_ERRORMSG_KEY] = [error localizedDescription];
-		dataDictionary[DATA_ERRORCODE_KEY] = @([error code]);
-	}
-	
-	dataDictionary[DATA_ADUNIT_ID_KEY] = banner.adUnitID;
-	
-	NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataDictionary options:0 error:nil];
-	
-	return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
++ (NSString *)getJSONStringForAd:(NSObject *)ad reward:(GADAdReward *)reward {
+	return [CoronaAdMobDelegate getJSONStringForAd:ad reward:reward error:nil];
+}
++ (NSString *)getJSONStringForAd:(NSObject *)ad error:(NSError *)error {
+	return [CoronaAdMobDelegate getJSONStringForAd:ad reward:nil error:error];
+}
++ (NSString *)getJSONStringForAd:(NSObject *)ad {
+	return [CoronaAdMobDelegate getJSONStringForAd:ad reward:nil error:nil];
 }
 
 // dispatch a new Lua event
@@ -1336,152 +1341,84 @@ AdMobPlugin::isLoaded(lua_State *L)
 
 // interstitial delegates --------------------------------------------------------------
 
-/// Called when an interstitial ad request succeeded. Show it at the next transition point in your
-/// application such as when transitioning between view controllers.
-- (void)interstitialDidReceiveAd:(GADInterstitial *)ad
+/// Tells the delegate that an impression has been recorded for the ad.
+- (void)adDidRecordImpression:(nonnull id<GADFullScreenPresentingAd>)ad
 {
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_LOADED,
-		@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForInterstitial:ad error:nil]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-	
-	CoronaAdMobAdInstance *adInstance = admobObjects[ad.adUnitID];
-	adInstance.isLoaded = true;
-	
 }
 
-/// Called just before presenting an interstitial. After this method finishes the interstitial will
-/// animate onto the screen. Use this opportunity to stop animations and save the state of your
-/// application in case the user leaves while the interstitial is on screen (e.g. to visit the App
-/// Store from a link on the interstitial).
-- (void)interstitialWillPresentScreen:(GADInterstitial *)ad
-{
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_DISPLAYED,
-		@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForInterstitial:ad error:nil]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-	
-	CoronaAdMobAdInstance *adInstance = admobObjects[ad.adUnitID];
-	adInstance.isLoaded = false;
-	
++ (NSString*)typeFor:(NSObject*)ad {
+	if([ad isKindOfClass:[GADRewardedAd class]]) {
+		return @(TYPE_REWARDEDVIDEO);
+	} else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
+		return  @(TYPE_INTERSTITIAL);
+	}
+	return @"UNKNOWN";
 }
 
-/// Called before the interstitial is to be animated off the screen.
-- (void)interstitialWillDismissScreen:(GADInterstitial *)ad
-{
-	// NOP
-	// We only need to use DidDismissScreen
++ (NSString *)placementForAd:(NSObject*)ad {
+	if([ad respondsToSelector:@selector(adUnitID)]) {
+		return [ad performSelector:@selector(adUnitID)];
+	}
+	return nil;
 }
 
-/// Called just after dismissing an interstitial and it has animated off the screen.
-- (void)interstitialDidDismissScreen:(GADInterstitial *)ad
-{
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_CLOSED,
-		@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForInterstitial:ad error:nil]
-	};
-	[self dispatchLuaEvent:coronaEvent];
++ (void)markInstanceUnloadedFor:(NSObject*)ad {
+	NSString *adUnitId = [CoronaAdMobDelegate placementForAd:ad];
+	if(!adUnitId) return;
+	CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
+	[adInstance setIsLoaded:false];
 }
 
-/// Called just before the application will background or terminate because the user clicked on an
-/// ad that will launch another application (such as the App Store). The normal
-/// UIApplicationDelegate methods, like applicationDidEnterBackground:, will be called immediately
-/// before this.
-- (void)interstitialWillLeaveApplication:(GADInterstitial *)ad
-{
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_CLICKED,
-		@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForInterstitial:ad error:nil]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-}
-
-/// Called when an interstitial ad request completed without an interstitial to
-/// show. This is common since interstitials are shown sparingly to users.
-- (void)interstitial:(GADInterstitial *)ad didFailToReceiveAdWithError:(GADRequestError *)error
+/// Tells the delegate that the ad failed to present full screen content.
+- (void)ad:(nonnull id<GADFullScreenPresentingAd>)ad didFailToPresentFullScreenContentWithError:(nonnull NSError *)error
 {
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_FAILED,
-		@(CoronaEventTypeKey()) : @(TYPE_INTERSTITIAL),
+		@(CoronaEventTypeKey()) : [CoronaAdMobDelegate typeFor:ad],
 		@(CoronaEventIsErrorKey()) : @(true),
-		@(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForInterstitial:ad error:error]
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:ad error:error]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 	
-	CoronaAdMobAdInstance *adInstance = admobObjects[ad.adUnitID];
-	adInstance.isLoaded = false;
+	[CoronaAdMobDelegate markInstanceUnloadedFor:ad];
 }
 
-// rewarded video delegates --------------------------------------------------------------
-
-// Tells the delegate that the reward based video ad has rewarded the user.
-- (void)rewardedAd:(GADRewardedAd *)rewardedAd userDidEarnReward:(GADAdReward *)reward {
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_REWARD,
-		@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForRewardedAd:rewardedAd reward:reward]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-}
-
-// Tells the delegate that the reward based video ad opened.
-- (void)rewardedAdDidPresent:(GADRewardedAd *)rewardedAd {
+/// Tells the delegate that the ad presented full screen content.
+- (void)adDidPresentFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad
+{
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_DISPLAYED,
-		@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForRewardedAd:rewardedAd]
+		@(CoronaEventTypeKey()) : [CoronaAdMobDelegate typeFor:ad],
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:ad]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 	
-	NSString *adUnitId = admobObjects[@(TYPE_REWARDEDVIDEO)];
-	CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
-	adInstance.isLoaded = false;
+	[CoronaAdMobDelegate markInstanceUnloadedFor:ad];
 }
 
-- (void)rewardedAd:(GADRewardedAd *)rewardedAd didFailToPresentWithError:(NSError *)error {
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_FAILED,
-		@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
-		@(CoronaEventIsErrorKey()) : @(true),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForRewardedAd:rewardedAd reward:nil error:error]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-	
-	NSString *adUnitId = admobObjects[@(TYPE_REWARDEDVIDEO)];
-	CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
-	adInstance.isLoaded = false;
+/// Tells the delegate that the ad will dismiss full screen content.
+- (void)adWillDismissFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad
+{
+	// no-op
 }
 
-
-// Tells the delegate that the reward based video ad closed.
-- (void)rewardedAdDidDismiss:(GADRewardedAd *)rewardedAd {
+/// Tells the delegate that the ad dismissed full screen content.
+- (void)adDidDismissFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad
+{
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_CLOSED,
-		@(CoronaEventTypeKey()) : @(TYPE_REWARDEDVIDEO),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForRewardedAd:rewardedAd]
+		@(CoronaEventTypeKey()) : [CoronaAdMobDelegate typeFor:ad],
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:ad error:nil]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 }
 
 // banner delegates --------------------------------------------------------------
 
--(void)adViewDidReceiveAd:(GADBannerView *)bannerView
+-(void)bannerViewDidReceiveAd:(GADBannerView *)bannerView
 {
 	CoronaAdMobAdInstance *adInstance = admobObjects[bannerView.adUnitID];
 	
@@ -1489,7 +1426,7 @@ AdMobPlugin::isLoaded(lua_State *L)
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : adInstance.isLoaded ? PHASE_REFRESHED : PHASE_LOADED,
 		@(CoronaEventTypeKey()) : @(TYPE_BANNER),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForBanner:bannerView error:nil]
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:bannerView error:nil]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 	
@@ -1497,47 +1434,37 @@ AdMobPlugin::isLoaded(lua_State *L)
 	adInstance.isLoaded = true;
 }
 
--(void)adViewWillPresentScreen:(GADBannerView *)bannerView
+-(void)bannerViewWillPresentScreen:(GADBannerView *)bannerView
 {
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_DISPLAYED,
 		@(CoronaEventTypeKey()) : @(TYPE_BANNER),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForBanner:bannerView error:nil]
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:bannerView error:nil]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 	
 }
 
--(void)adViewDidDismissScreen:(GADBannerView *)bannerView
+-(void)bannerViewDidDismissScreen:(GADBannerView *)bannerView
 {
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_HIDDEN,
 		@(CoronaEventTypeKey()) : @(TYPE_BANNER),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForBanner:bannerView error:nil]
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:bannerView error:nil]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 }
 
--(void)adViewWillDismissScreen:(GADBannerView *)bannerView
+-(void)bannerViewWillDismissScreen:(GADBannerView *)bannerView
 {
 	// NOP
 	// We only need to use DidDismissScreen
 }
 
--(void)adViewWillLeaveApplication:(GADBannerView *)bannerView
-{
-	// send Corona Lua event
-	NSDictionary *coronaEvent = @{
-		@(CoronaEventPhaseKey()) : PHASE_CLICKED,
-		@(CoronaEventTypeKey()) : @(TYPE_BANNER),
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForBanner:bannerView error:nil]
-	};
-	[self dispatchLuaEvent:coronaEvent];
-}
-
--(void)adView:(GADBannerView *)bannerView didFailToReceiveAdWithError:(GADRequestError *)error
+- (void)bannerView:(nonnull GADBannerView *)bannerView
+    didFailToReceiveAdWithError:(nonnull NSError *)error
 {
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
@@ -1545,7 +1472,7 @@ AdMobPlugin::isLoaded(lua_State *L)
 		@(CoronaEventTypeKey()) : @(TYPE_BANNER),
 		@(CoronaEventIsErrorKey()) : @(true),
 		@(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
-		CORONA_EVENT_DATA_KEY : [self getJSONStringForBanner:bannerView error:error]
+		CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:bannerView error:error]
 	};
 	[self dispatchLuaEvent:coronaEvent];
 	
@@ -1584,11 +1511,12 @@ AdMobPlugin::isLoaded(lua_State *L)
 			[banner removeFromSuperview];
 		}
 		else if (UTF8IsEqual([self.adType UTF8String], TYPE_INTERSTITIAL)) {
-			GADInterstitial *interstitial = (GADInterstitial *)self.adInstance;
-			[interstitial setDelegate:nil];
+			GADInterstitialAd *interstitial = (GADInterstitialAd *)self.adInstance;
+			[interstitial setFullScreenContentDelegate:nil];
 		}
 		else if(UTF8IsEqual([self.adType UTF8String], TYPE_REWARDEDVIDEO)) {
-			
+			GADRewardedAd *rewarded = (GADRewardedAd *)self.adInstance;
+			[rewarded setFullScreenContentDelegate:nil];
 		}
 		
 		self.adInstance = nil;
