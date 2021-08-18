@@ -18,10 +18,11 @@ afterEvaluate {
 
 dependencies {
     implementation ':Corona@aar'
-    implementation 'com.google.android.gms:play-services-ads:19.6.0'
+    implementation 'com.google.android.gms:play-services-ads:20.2.0'
 }
 
 task exportAARToThePluginBinary {
+    group 'Solar2Dev'
     dependsOn assemble
     doLast {
         copy {
@@ -37,7 +38,7 @@ task exportAARToThePluginBinary {
 }
 
 task createDataTgz(type: Tar) {
-    group 'Corona'
+    group 'Solar2Dev'
     from "../../../plugins/2020.3607/android/"
     destinationDirectory = file("$buildDir/outputs")
     archiveFileName = 'data.tgz'

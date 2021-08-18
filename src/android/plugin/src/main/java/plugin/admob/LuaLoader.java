@@ -17,15 +17,12 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-
-import androidx.annotation.NonNull;
 
 import com.ansca.corona.CoronaActivity;
 import com.ansca.corona.CoronaEnvironment;
@@ -41,15 +38,17 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
 import com.google.android.gms.ads.RequestConfiguration;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewarded.RewardedAd;
-import com.google.android.gms.ads.rewarded.RewardedAdCallback;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.naef.jnlua.JavaFunction;
 import com.naef.jnlua.LuaState;
@@ -327,14 +326,20 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                         if (object instanceof AdView) {
                             AdView banner = (AdView) object;
+                            //noinspection ConstantConditions
                             banner.setAdListener(null);
                             banner.destroy();
-                        } else if (object instanceof InterstitialAd) {
-                            InterstitialAd interstitial = (InterstitialAd) object;
-                            CoronaAdmobInterstitialDelegate oldListener = (CoronaAdmobInterstitialDelegate) interstitial.getAdListener();
-                            if (oldListener != null) {
-                                oldListener.interstitial = null;
-                                interstitial.setAdListener(null);
+                        } else if (object instanceof CoronaAdmobInterstitialLoadDelegate) {
+                            CoronaAdmobInterstitialLoadDelegate interstitial = (CoronaAdmobInterstitialLoadDelegate) object;
+                            if (interstitial.interstitialAd != null) {
+                                interstitial.interstitialAd.setFullScreenContentCallback(null);
+                                interstitial.interstitialAd = null;
+                            }
+                        } else if (object instanceof CoronaAdmobRewardedLoadDelegate) {
+                            CoronaAdmobRewardedLoadDelegate rewardedAd = (CoronaAdmobRewardedLoadDelegate) object;
+                            if (rewardedAd.rewardedAd != null) {
+                                rewardedAd.rewardedAd.setFullScreenContentCallback(null);
+                                rewardedAd.rewardedAd = null;
                             }
                         }
                     }
@@ -598,21 +603,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         }
 
         private AdSize getAdSize(CoronaActivity activity) {
-            if (activity.getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
-
-                Display display = activity.getWindowManager().getDefaultDisplay();
-                DisplayMetrics outMetrics = new DisplayMetrics();
-                display.getMetrics(outMetrics);
-
-//            float widthPixels = activity.getContentWidthInPixels();
-                float widthPixels = activity.getOverlayView().getWidth();
-                float density = outMetrics.density;
-
-                int adWidth = (int) (widthPixels / density);
-                return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, adWidth);
-            } else {
-                return AdSize.SMART_BANNER;
-            }
+            return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, AdSize.FULL_WIDTH);
         }
 
 
@@ -818,40 +809,20 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                             switch (fAdType) {
                                 case TYPE_INTERSTITIAL:
                                     // initialize object and set delegate
-                                    InterstitialAd interstitial = new InterstitialAd(coronaActivity);
-                                    interstitial.setAdUnitId(fAdUnitId);
-                                    interstitial.setAdListener(new CoronaAdmobInterstitialDelegate(interstitial));
-
-                                    try {
-                                        // remove the old interstitial's delegate callback
-                                        InterstitialAd oldInterstitial = (InterstitialAd) admobObjects.get(fAdUnitId);
-                                        if (oldInterstitial != null) {
-                                            CoronaAdmobInterstitialDelegate oldListener = (CoronaAdmobInterstitialDelegate) oldInterstitial.getAdListener();
-                                            oldListener.interstitial = null;
-                                            oldInterstitial.setAdListener(null);
-                                        }
-                                    } catch (ClassCastException e) {
-                                        logMsg(ERROR_MSG, "adUnitId '" + fAdUnitId + "' is not an interstitial");
-                                        return;
-                                    } catch (Exception e) {
-                                        logMsg(ERROR_MSG, "Unknown error while processing interstitial with adUnitId '" + fAdUnitId + "'");
-                                        return;
-                                    }
+                                    CoronaAdmobInterstitialLoadDelegate interstitialLoadDelegate = new CoronaAdmobInterstitialLoadDelegate(fAdUnitId);
+                                    InterstitialAd.load(coronaActivity, fAdUnitId, fRequest, interstitialLoadDelegate);
 
                                     // save for future use
                                     admobObjects.put(TYPE_INTERSTITIAL, fAdUnitId);
-                                    admobObjects.put(fAdUnitId, interstitial);
-
-                                    // load an interstitial
-                                    interstitial.loadAd(fRequest);
+                                    admobObjects.put(fAdUnitId, interstitialLoadDelegate);
                                     break;
                                 case TYPE_REWARDEDVIDEO:
                                     // initialize object and set delegate
-                                    RewardedAd rewardedAd = new RewardedAd(coronaActivity, fAdUnitId);
+                                    CoronaAdmobRewardedLoadDelegate rewardedLoadDelegate = new CoronaAdmobRewardedLoadDelegate(fAdUnitId);
+                                    RewardedAd.load(coronaActivity, fAdUnitId, fRequest, rewardedLoadDelegate);
                                     // save for future use
                                     admobObjects.put(TYPE_REWARDEDVIDEO, fAdUnitId);
-                                    admobObjects.put(fAdUnitId, rewardedAd);
-                                    rewardedAd.loadAd(fRequest, new CoronaAdmobRewardedLoadDelegate(rewardedAd, fAdUnitId));
+                                    admobObjects.put(fAdUnitId, rewardedLoadDelegate);
                                     break;
                                 case TYPE_BANNER:
                                     // calculate the Corona->device coordinate ratio
@@ -887,6 +858,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                         AdView oldBanner = (AdView) admobObjects.get(fAdUnitId);
                                         if (oldBanner != null) {
                                             oldBanner.setVisibility(View.INVISIBLE);
+                                            //noinspection ConstantConditions
                                             oldBanner.setAdListener(null);
                                             coronaActivity.getOverlayView().removeView(oldBanner);
                                             oldBanner.destroy();
@@ -999,60 +971,54 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
             // declare final values for inner loop
             final CoronaActivity coronaActivity = CoronaEnvironment.getCoronaActivity();
+            if (coronaActivity == null) return 0;
             final String fAdType = adType;
             final String fAdUnitIdParam = adUnitIdParam;
 
             boolean isLoaded = false;
-
-            try {
-                if (coronaActivity != null) {
-                    // since we're returning a value to Lua, we need to implement a FutureTask
-                    FutureTask<Boolean> isLoadedTask = new FutureTask<>(new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() {
-                            boolean result = false;
-                            String adUnitId;
-                            if (fAdUnitIdParam != null) {
-                                adUnitId = fAdUnitIdParam;
-                            } else {
-                                adUnitId = (String) admobObjects.get(fAdType);
-                            }
-
-                            if (adUnitId != null) {
-                                switch (fAdType) {
-                                    case TYPE_INTERSTITIAL:
-                                        InterstitialAd interstitial = (InterstitialAd) admobObjects.get(adUnitId);
-                                        result = (interstitial != null) && interstitial.isLoaded();
-                                        break;
-                                    case TYPE_REWARDEDVIDEO:
-                                        RewardedAd rewardedAd = (RewardedAd) admobObjects.get(adUnitId);
-                                        result = (rewardedAd != null) && rewardedAd.isLoaded();
-                                        break;
-                                    case TYPE_BANNER:
-                                        AdView banner = (AdView) admobObjects.get(adUnitId);
-                                        if (banner != null) {
-                                            CoronaAdmobBannerDelegate bannerDelegate = (CoronaAdmobBannerDelegate) banner.getAdListener();
-                                            result = bannerDelegate.isLoaded;
-                                        }
-                                        break;
-                                }
-                            }
-
-                            // return result to FutureTask
-                            return result;
-                        }
-                    });
-
-                    // Run the task on the ui thread
-                    coronaActivity.runOnUiThread(isLoadedTask);
-
-                    // IMPORTANT! must use get() so FutureTask will block until it returns a value
-                    isLoaded = isLoadedTask.get(2000, TimeUnit.MILLISECONDS);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            final String fAdUnitId;
+            if (fAdUnitIdParam != null) {
+                fAdUnitId = fAdUnitIdParam;
+            } else {
+                fAdUnitId = (String) admobObjects.get(fAdType);
             }
+            if (fAdUnitId != null) {
 
+                switch (fAdType) {
+                    case TYPE_INTERSTITIAL:
+                        CoronaAdmobInterstitialLoadDelegate interstitial = (CoronaAdmobInterstitialLoadDelegate) admobObjects.get(fAdUnitId);
+                        isLoaded = interstitial != null && interstitial.interstitialAd != null;
+                        break;
+                    case TYPE_REWARDEDVIDEO:
+                        CoronaAdmobRewardedLoadDelegate rewardedAd = (CoronaAdmobRewardedLoadDelegate) admobObjects.get(fAdUnitId);
+                        isLoaded = rewardedAd != null && rewardedAd.rewardedAd != null;
+                        break;
+                    case TYPE_BANNER:
+                        try {
+                            // since we're returning a value to Lua, we need to implement a FutureTask
+                            FutureTask<Boolean> isLoadedTask = new FutureTask<>(new Callable<Boolean>() {
+                                @Override
+                                public Boolean call() {
+                                    AdView banner = (AdView) admobObjects.get(fAdUnitId);
+                                    if (banner != null) {
+                                        CoronaAdmobBannerDelegate bannerDelegate = (CoronaAdmobBannerDelegate) banner.getAdListener();
+                                        return bannerDelegate.isLoaded;
+                                    }
+                                    return false;
+                                }
+                            });
+
+                            // Run the task on the ui thread
+                            coronaActivity.runOnUiThread(isLoadedTask);
+
+                            // IMPORTANT! must use get() so FutureTask will block until it returns a value
+                            isLoaded = isLoadedTask.get(2000, TimeUnit.MILLISECONDS);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        break;
+                }
+            }
             luaState.pushBoolean(isLoaded);
 
             return 1;
@@ -1264,24 +1230,22 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                         // show specified ad type
                         switch (fAdType) {
                             case TYPE_INTERSTITIAL:
-                                InterstitialAd interstitial = (InterstitialAd) admobObjects.get(adUnitId);
-
-                                if ((interstitial != null) && interstitial.isLoaded()) {
-                                    // call special adOpened delegate (see delegate for more info)
-                                    ((CoronaAdmobInterstitialDelegate) interstitial.getAdListener()).coronaAdOpened();
-                                    interstitial.show();
+                                CoronaAdmobInterstitialLoadDelegate interstitial = (CoronaAdmobInterstitialLoadDelegate) admobObjects.get(adUnitId);
+                                if ((interstitial != null) && interstitial.interstitialAd != null) {
+                                    CoronaAdmobFullScreenDelegate delegate = new CoronaAdmobFullScreenDelegate(TYPE_INTERSTITIAL, interstitial.adUnitId);
+                                    interstitial.interstitialAd.setFullScreenContentCallback(delegate);
+                                    delegate.coronaAdOpened();
+                                    interstitial.interstitialAd.show(coronaActivity);
                                 } else {
                                     logMsg(WARNING_MSG, "Interstitial not loaded");
                                 }
                                 break;
                             case TYPE_REWARDEDVIDEO:
-                                RewardedAd rewardedAd = (RewardedAd) admobObjects.get(adUnitId);
-
-                                if ((rewardedAd != null) && rewardedAd.isLoaded()) {
-                                    // call special adOpened delegate (see delegate for more info)
-                                    CoronaAdmobRewardedShowDelegate delegate = new CoronaAdmobRewardedShowDelegate(rewardedAd, adUnitId);
+                                CoronaAdmobRewardedLoadDelegate rewardedAd = (CoronaAdmobRewardedLoadDelegate) admobObjects.get(adUnitId);
+                                if ((rewardedAd != null) && rewardedAd.rewardedAd != null) {
+                                    CoronaAdmobFullScreenDelegate delegate = new CoronaAdmobFullScreenDelegate(TYPE_REWARDEDVIDEO, adUnitId);
                                     delegate.coronaAdOpened();
-                                    rewardedAd.show(coronaActivity, delegate);
+                                    rewardedAd.rewardedAd.show(coronaActivity, delegate);
                                 } else {
                                     logMsg(WARNING_MSG, "Rewarded Video not loaded");
                                 }
@@ -1327,24 +1291,29 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                                     orientedHeight = (orientation == ORIENTATION_PORTRAIT) ? size.y : size.x;
 
-                                    // make sure the banner frame is visible.
-                                    // adjust it if the user has specified 'y' which will render it partially off-screen
-                                    if (newBannerY >= 0) { // offset from top
-                                        if (newBannerY + banner.getAdSize().getHeight() > orientedHeight) {
-                                            logMsg(WARNING_MSG, "Banner y position off screen. Adjusting position.");
-                                            params.gravity = Gravity.BOTTOM | Gravity.CENTER;
+                                    AdSize bannerSize = banner.getAdSize();
+                                    if (bannerSize != null) {
+                                        // make sure the banner frame is visible.
+                                        // adjust it if the user has specified 'y' which will render it partially off-screen
+                                        if (newBannerY >= 0) { // offset from top
+                                            if (newBannerY + bannerSize.getHeight() > orientedHeight) {
+                                                logMsg(WARNING_MSG, "Banner y position off screen. Adjusting position.");
+                                                params.gravity = Gravity.BOTTOM | Gravity.CENTER;
+                                            } else {
+                                                params.gravity = Gravity.TOP | Gravity.CENTER;
+                                                params.topMargin = (int) newBannerY;
+                                            }
                                         } else {
-                                            params.gravity = Gravity.TOP | Gravity.CENTER;
-                                            params.topMargin = (int) newBannerY;
+                                            if (orientedHeight - bannerSize.getHeight() + newBannerY < 0) {
+                                                logMsg(WARNING_MSG, "Banner y position off screen. Adjusting position.");
+                                                params.gravity = Gravity.TOP | Gravity.CENTER;
+                                            } else {
+                                                params.gravity = Gravity.BOTTOM | Gravity.CENTER;
+                                                params.bottomMargin = Math.abs((int) newBannerY);
+                                            }
                                         }
                                     } else {
-                                        if (orientedHeight - banner.getAdSize().getHeight() + newBannerY < 0) {
-                                            logMsg(WARNING_MSG, "Banner y position off screen. Adjusting position.");
-                                            params.gravity = Gravity.TOP | Gravity.CENTER;
-                                        } else {
-                                            params.gravity = Gravity.BOTTOM | Gravity.CENTER;
-                                            params.bottomMargin = Math.abs((int) newBannerY);
-                                        }
+                                        params.gravity = Gravity.BOTTOM | Gravity.CENTER;
                                     }
                                 }
 
@@ -1362,7 +1331,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 try {
                                     data.put(DATA_ADUNIT_ID_KEY, banner.getAdUnitId());
                                 } catch (Exception e) {
-                                    System.err.println();
+                                    e.printStackTrace();
                                 }
 
                                 Map<String, Object> coronaEvent = new HashMap<>();
@@ -1537,7 +1506,10 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                             } else {
                                 AdView banner = (AdView) admobObjects.get(adUnitId);
                                 if (banner != null) {
-                                    result = banner.getAdSize().getHeightInPixels(coronaActivity) / (double) admobObjects.get(Y_RATIO_KEY);
+                                    AdSize size = banner.getAdSize();
+                                    if (size != null) {
+                                        result = size.getHeightInPixels(coronaActivity) / (double) admobObjects.get(Y_RATIO_KEY);
+                                    }
                                 }
                             }
 
@@ -1562,114 +1534,18 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     }
 
     // -------------------------------------------------------------------
-    // Delegates
-    // -------------------------------------------------------------------
 
-    private static class CoronaAdmobDelegate extends AdListener {
-        CoronaAdmobDelegate() {
-        }
-    }
-
-    // -------------------------------------------------------------------
-
-    private class CoronaAdmobInterstitialDelegate extends CoronaAdmobDelegate {
-        InterstitialAd interstitial;
-
-        CoronaAdmobInterstitialDelegate(InterstitialAd interstitial) {
-            this.interstitial = interstitial;
-        }
-
-        @Override
-        public void onAdLoaded() {
-            // create data
-            JSONObject data = new JSONObject();
-            try {
-                data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
-
-                Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
-                coronaEvent.put(EVENT_DATA_KEY, data.toString());
-                dispatchLuaEvent(coronaEvent);
-            } catch (Exception e) {
-                System.err.println();
-            }
-        }
-
-        public void coronaAdOpened() {
-            // create data
-            JSONObject data = new JSONObject();
-            try {
-                data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
-
-                Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_DISPLAYED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
-                coronaEvent.put(EVENT_DATA_KEY, data.toString());
-                dispatchLuaEvent(coronaEvent);
-            } catch (Exception e) {
-                System.err.println();
-            }
-        }
-
-        @Override
-        public void onAdOpened() {
-            // NOP
-            // ad activity takes control before Corona can process this event
-            // so coronaAdOpened is called in show() instead
-        }
-
-        @Override
-        public void onAdClosed() {
-            // create data
-            JSONObject data = new JSONObject();
-            try {
-                data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
-
-                Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_CLOSED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
-                coronaEvent.put(EVENT_DATA_KEY, data.toString());
-                dispatchLuaEvent(coronaEvent);
-            } catch (Exception e) {
-                System.err.println();
-            }
-        }
-
-        @Override
-        public void onAdFailedToLoad(LoadAdError error) {
-            // create data
-            JSONObject data = new JSONObject();
-            try {
-                data.put(DATA_ERRORMSG_KEY, error.getMessage());
-                data.put(DATA_ERRORCODE_KEY, error.getCode());
-                data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
-
-                Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
-                coronaEvent.put(CoronaLuaEvent.RESPONSE_KEY, RESPONSE_LOAD_FAILED);
-                coronaEvent.put(EVENT_DATA_KEY, data.toString());
-                dispatchLuaEvent(coronaEvent);
-            } catch (Exception e) {
-                System.err.println();
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------
-
-    private class CoronaAdmobRewardedShowDelegate extends RewardedAdCallback {
-        RewardedAd rewardedAd;
+    private class CoronaAdmobFullScreenDelegate extends FullScreenContentCallback implements OnUserEarnedRewardListener {
         String adUnitId;
+        String adType;
 
-        CoronaAdmobRewardedShowDelegate(RewardedAd rewardedAd, String adUnitId) {
-            this.rewardedAd = rewardedAd;
+        CoronaAdmobFullScreenDelegate(String adType, String adUnitId) {
             this.adUnitId = adUnitId;
+            this.adType = adType;
         }
 
         @Override
-        public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+        public void onUserEarnedReward(RewardItem rewardItem) {
             // create data
             JSONObject data = new JSONObject();
             try {
@@ -1683,7 +1559,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
 
@@ -1695,23 +1571,17 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                 Map<String, Object> coronaEvent = new HashMap<>();
                 coronaEvent.put(EVENT_PHASE_KEY, PHASE_DISPLAYED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
+                coronaEvent.put(EVENT_TYPE_KEY, adType);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
 
-        @Override
-        public void onRewardedAdOpened() {
-            // NOP
-            // ad activity takes control before Lua can process this event
-            // so coronaAdOpened is called in show() instead
-        }
 
         @Override
-        public void onRewardedAdClosed() {
+        public void onAdDismissedFullScreenContent() {
             // create data
             JSONObject data = new JSONObject();
             try {
@@ -1719,17 +1589,17 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                 Map<String, Object> coronaEvent = new HashMap<>();
                 coronaEvent.put(EVENT_PHASE_KEY, PHASE_CLOSED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
+                coronaEvent.put(EVENT_TYPE_KEY, adType);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
             invalidateAllViews();
         }
 
         @Override
-        public void onRewardedAdFailedToShow(AdError err) {
+        public void onAdFailedToShowFullScreenContent(AdError err) {
             // create data
             JSONObject data = new JSONObject();
             try {
@@ -1739,28 +1609,72 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                 Map<String, Object> coronaEvent = new HashMap<>();
                 coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
+                coronaEvent.put(EVENT_TYPE_KEY, adType);
                 coronaEvent.put(CoronaLuaEvent.RESPONSE_KEY, RESPONSE_LOAD_FAILED);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class CoronaAdmobInterstitialLoadDelegate extends InterstitialAdLoadCallback {
+        public InterstitialAd interstitialAd;
+        String adUnitId;
+
+        CoronaAdmobInterstitialLoadDelegate(String adUnitId) {
+            this.adUnitId = adUnitId;
+        }
+
+        @Override
+        public void onAdLoaded(InterstitialAd ad) {
+            interstitialAd = ad;
+            // create data
+            JSONObject data = new JSONObject();
+            try {
+                data.put(DATA_ADUNIT_ID_KEY, adUnitId);
+                Map<String, Object> coronaEvent = new HashMap<>();
+                coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
+                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
+                coronaEvent.put(EVENT_DATA_KEY, data.toString());
+                dispatchLuaEvent(coronaEvent);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onAdFailedToLoad(LoadAdError adError) {
+            JSONObject data = new JSONObject();
+            try {
+                data.put(DATA_ADUNIT_ID_KEY, adUnitId);
+                Map<String, Object> coronaEvent = new HashMap<>();
+                coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
+                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
+                coronaEvent.put(EVENT_DATA_KEY, data.toString());
+                coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
+                coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, adError.toString());
+                logMsg(ERROR_MSG, "Error while loading ad " + adError);
+                dispatchLuaEvent(coronaEvent);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
     private class CoronaAdmobRewardedLoadDelegate extends RewardedAdLoadCallback {
-        RewardedAd rewardedAd;
+        public RewardedAd rewardedAd;
         String adUnitId;
 
-        CoronaAdmobRewardedLoadDelegate(RewardedAd rewardedAd, String adUnitId) {
-            this.rewardedAd = rewardedAd;
+        CoronaAdmobRewardedLoadDelegate(String adUnitId) {
             this.adUnitId = adUnitId;
         }
 
         @Override
-        public void onRewardedAdLoaded() {
+        public void onAdLoaded(RewardedAd ad) {
+            rewardedAd = ad;
             // create data
             JSONObject data = new JSONObject();
             try {
@@ -1771,12 +1685,12 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
 
         @Override
-        public void onRewardedAdFailedToLoad(LoadAdError adError) {
+        public void onAdFailedToLoad(LoadAdError adError) {
             JSONObject data = new JSONObject();
             try {
                 data.put(DATA_ADUNIT_ID_KEY, adUnitId);
@@ -1789,7 +1703,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 logMsg(ERROR_MSG, "Error while loading ad " + adError);
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
     }
@@ -1797,7 +1711,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
     // -------------------------------------------------------------------
 
-    private class CoronaAdmobBannerDelegate extends CoronaAdmobDelegate {
+    private class CoronaAdmobBannerDelegate extends AdListener {
         AdView currentBanner;
         boolean isLoaded;
 
@@ -1821,7 +1735,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                 this.isLoaded = true;
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
 
@@ -1838,7 +1752,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
 
@@ -1855,7 +1769,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 dispatchLuaEvent(coronaEvent);
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
             invalidateAllViews();
         }
@@ -1878,7 +1792,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                 this.isLoaded = false;
             } catch (Exception e) {
-                System.err.println();
+                e.printStackTrace();
             }
         }
     }
