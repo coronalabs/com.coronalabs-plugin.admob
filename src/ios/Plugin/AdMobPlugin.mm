@@ -736,8 +736,7 @@ AdMobPlugin::load(lua_State *L)
 		admobObjects[Y_RATIO_KEY] = @(yRatio);
 		
 		// set ad size
-		UIInterfaceOrientation currentOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-		GADAdSize adSize = UIInterfaceOrientationIsLandscape(currentOrientation) ? kGADAdSizeSmartBannerLandscape : kGADAdSizeSmartBannerPortrait;
+		GADAdSize adSize = GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(library.coronaViewController.view.frame.size.width);
 		
 		// initialize object and set delegate
 		GADBannerView *banner = [[GADBannerView alloc] initWithAdSize:adSize];

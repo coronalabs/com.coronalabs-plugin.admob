@@ -88,7 +88,7 @@ if platformName == "Android" then
   adUnits = {
     interstitial="ca-app-pub-7897780601981890/4910592366",
     rewardedVideo="ca-app-pub-7897780601981890/6354495960",
-    banner="ca-app-pub-7897780601981890/3433859164"
+    banner="ca-app-pub-3940256099942544/6300978111"
   }
 elseif platformName == "iPhone OS" then
   appId = "ca-app-pub-7897780601981890~3573459965"

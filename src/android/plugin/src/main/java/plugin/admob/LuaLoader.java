@@ -9,12 +9,15 @@
 
 package plugin.admob;
 
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+import static java.lang.Math.ceil;
+
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
@@ -64,9 +67,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
-
-import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
-import static java.lang.Math.ceil;
 
 // Plugin imports
 
@@ -337,9 +337,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 interstitial.setAdListener(null);
                             }
                         }
-                        //else if (object instanceof  RewardedAd) {
-                        //  RewardedAd rewardedAd = (RewardedAd)object;
-                        //}
                     }
 
                     if (runtime != null) {
@@ -587,6 +584,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         }
     }
 
+
     // [Lua] load(adType, options)
     private class Load implements NamedJavaFunction {
         /**
@@ -598,6 +596,25 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         public String getName() {
             return "load";
         }
+
+        private AdSize getAdSize(CoronaActivity activity) {
+            if (activity.getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT) {
+
+                Display display = activity.getWindowManager().getDefaultDisplay();
+                DisplayMetrics outMetrics = new DisplayMetrics();
+                display.getMetrics(outMetrics);
+
+//            float widthPixels = activity.getContentWidthInPixels();
+                float widthPixels = activity.getOverlayView().getWidth();
+                float density = outMetrics.density;
+
+                int adWidth = (int) (widthPixels / density);
+                return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, adWidth);
+            } else {
+                return AdSize.SMART_BANNER;
+            }
+        }
+
 
         /**
          * This method is called when the Lua function is called.
@@ -779,7 +796,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 keywordIndex++;
             }
             RequestConfiguration.Builder configurator = MobileAds.getRequestConfiguration().toBuilder().setTagForChildDirectedTreatment(childSafe ? RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE : RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
-            if(maxAdContentRating != null) {
+            if (maxAdContentRating != null) {
                 configurator.setMaxAdContentRating(maxAdContentRating);
             }
             MobileAds.setRequestConfiguration(configurator.build());
@@ -850,7 +867,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
                                     AdView banner = new AdView(coronaActivity);
                                     banner.setAdUnitId(fAdUnitId);
-                                    banner.setAdSize(AdSize.SMART_BANNER);
+                                    banner.setAdSize(getAdSize(coronaActivity));
                                     banner.setAdListener(new CoronaAdmobBannerDelegate(banner));
                                     banner.setVisibility(View.INVISIBLE);
 
@@ -1305,22 +1322,10 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                     int orientation = coronaActivity.getResources().getConfiguration().orientation;
                                     int orientedHeight;
 
-                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB_MR2) {
-                                        if (orientation == ORIENTATION_PORTRAIT) {
-                                            orientedHeight = display.getHeight();
-                                        } else {
-                                            orientedHeight = display.getWidth();
-                                        }
-                                    } else {
-                                        Point size = new Point();
-                                        display.getSize(size);
+                                    Point size = new Point();
+                                    display.getSize(size);
 
-                                        if (orientation == ORIENTATION_PORTRAIT) {
-                                            orientedHeight = size.y;
-                                        } else {
-                                            orientedHeight = size.x;
-                                        }
-                                    }
+                                    orientedHeight = (orientation == ORIENTATION_PORTRAIT) ? size.y : size.x;
 
                                     // make sure the banner frame is visible.
                                     // adjust it if the user has specified 'y' which will render it partially off-screen
@@ -1563,21 +1568,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static class CoronaAdmobDelegate extends AdListener {
         CoronaAdmobDelegate() {
         }
-
-        String getAdRequestErrorMsg(int errorCode) {
-            switch (errorCode) {
-                case AdRequest.ERROR_CODE_INTERNAL_ERROR:
-                    return "Internal Error";
-                case AdRequest.ERROR_CODE_INVALID_REQUEST:
-                    return "Invalid Request";
-                case AdRequest.ERROR_CODE_NO_FILL:
-                    return "No Ads Available";
-                case AdRequest.ERROR_CODE_NETWORK_ERROR:
-                    return "Network Error";
-                default:
-                    return "Unknown error";
-            }
-        }
     }
 
     // -------------------------------------------------------------------
@@ -1647,29 +1637,12 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         }
 
         @Override
-        public void onAdLeftApplication() {
+        public void onAdFailedToLoad(LoadAdError error) {
             // create data
             JSONObject data = new JSONObject();
             try {
-                data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
-
-                Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_CLICKED);
-                coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
-                coronaEvent.put(EVENT_DATA_KEY, data.toString());
-                dispatchLuaEvent(coronaEvent);
-            } catch (Exception e) {
-                System.err.println();
-            }
-        }
-
-        @Override
-        public void onAdFailedToLoad(int i) {
-            // create data
-            JSONObject data = new JSONObject();
-            try {
-                data.put(DATA_ERRORMSG_KEY, getAdRequestErrorMsg(i));
-                data.put(DATA_ERRORCODE_KEY, i);
+                data.put(DATA_ERRORMSG_KEY, error.getMessage());
+                data.put(DATA_ERRORCODE_KEY, error.getCode());
                 data.put(DATA_ADUNIT_ID_KEY, interstitial.getAdUnitId());
 
                 Map<String, Object> coronaEvent = new HashMap<>();
@@ -1777,7 +1750,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         }
     }
 
-    private class CoronaAdmobRewardedLoadDelegate extends  RewardedAdLoadCallback {
+    private class CoronaAdmobRewardedLoadDelegate extends RewardedAdLoadCallback {
         RewardedAd rewardedAd;
         String adUnitId;
 
@@ -1825,8 +1798,8 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     // -------------------------------------------------------------------
 
     private class CoronaAdmobBannerDelegate extends CoronaAdmobDelegate {
-        AdView currentBanner = null;
-        boolean isLoaded = false;
+        AdView currentBanner;
+        boolean isLoaded;
 
         CoronaAdmobBannerDelegate(AdView banner) {
             this.currentBanner = banner;
@@ -1888,18 +1861,12 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         }
 
         @Override
-        public void onAdLeftApplication() {
-            // NOP
-            // always preceded by onAdOpened
-        }
-
-        @Override
-        public void onAdFailedToLoad(int i) {
+        public void onAdFailedToLoad(LoadAdError error) {
             // create data
             JSONObject data = new JSONObject();
             try {
-                data.put(DATA_ERRORMSG_KEY, getAdRequestErrorMsg(i));
-                data.put(DATA_ERRORCODE_KEY, i);
+                data.put(DATA_ERRORMSG_KEY, error.getMessage());
+                data.put(DATA_ERRORCODE_KEY, error.getCode());
                 data.put(DATA_ADUNIT_ID_KEY, currentBanner.getAdUnitId());
 
                 Map<String, Object> coronaEvent = new HashMap<>();
