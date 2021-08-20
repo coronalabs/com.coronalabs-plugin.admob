@@ -1236,6 +1236,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                     interstitial.interstitialAd.setFullScreenContentCallback(delegate);
                                     delegate.coronaAdOpened();
                                     interstitial.interstitialAd.show(coronaActivity);
+                                    interstitial.interstitialAd = null;
                                 } else {
                                     logMsg(WARNING_MSG, "Interstitial not loaded");
                                 }
@@ -1246,6 +1247,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                     CoronaAdmobFullScreenDelegate delegate = new CoronaAdmobFullScreenDelegate(TYPE_REWARDEDVIDEO, adUnitId);
                                     delegate.coronaAdOpened();
                                     rewardedAd.rewardedAd.show(coronaActivity, delegate);
+                                    rewardedAd.rewardedAd = null;
                                 } else {
                                     logMsg(WARNING_MSG, "Rewarded Video not loaded");
                                 }
@@ -1610,7 +1612,6 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 Map<String, Object> coronaEvent = new HashMap<>();
                 coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
                 coronaEvent.put(EVENT_TYPE_KEY, adType);
-                coronaEvent.put(CoronaLuaEvent.RESPONSE_KEY, RESPONSE_LOAD_FAILED);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
                 dispatchLuaEvent(coronaEvent);
@@ -1651,8 +1652,9 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             try {
                 data.put(DATA_ADUNIT_ID_KEY, adUnitId);
                 Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
+                coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
                 coronaEvent.put(EVENT_TYPE_KEY, TYPE_INTERSTITIAL);
+                coronaEvent.put(CoronaLuaEvent.RESPONSE_KEY, RESPONSE_LOAD_FAILED);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
                 coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, adError.toString());
@@ -1695,8 +1697,9 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             try {
                 data.put(DATA_ADUNIT_ID_KEY, adUnitId);
                 Map<String, Object> coronaEvent = new HashMap<>();
-                coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
+                coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
                 coronaEvent.put(EVENT_TYPE_KEY, TYPE_REWARDEDVIDEO);
+                coronaEvent.put(CoronaLuaEvent.RESPONSE_KEY, RESPONSE_LOAD_FAILED);
                 coronaEvent.put(EVENT_DATA_KEY, data.toString());
                 coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
                 coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, adError.toString());
