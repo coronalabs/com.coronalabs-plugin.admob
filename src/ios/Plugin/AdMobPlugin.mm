@@ -673,6 +673,8 @@ AdMobPlugin::load(lua_State *L)
 				
 				adInstance.isLoaded = false;
 			} else {
+                
+                interstitialAd.fullScreenContentDelegate = admobDelegate;
 				adInstance.adInstance = interstitialAd;
 				// send Corona Lua event
 				NSDictionary *coronaEvent = @{
@@ -709,6 +711,8 @@ AdMobPlugin::load(lua_State *L)
 				
 				adInstance.isLoaded = false;
 			} else {
+                
+                rewardedAd.fullScreenContentDelegate = admobDelegate;
 				adInstance.adInstance = rewardedAd;
 				// send Corona Lua event
 				NSDictionary *coronaEvent = @{
