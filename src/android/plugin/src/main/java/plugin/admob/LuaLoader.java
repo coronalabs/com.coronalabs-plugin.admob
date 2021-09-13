@@ -78,7 +78,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static final String PLUGIN_NAME = "plugin.admob";
-    private static final String PLUGIN_VERSION = "1.2.6";
+    private static final String PLUGIN_VERSION = "1.2.7";
     private static final String PLUGIN_SDK_VERSION = "0";//getVersionString();
 
     private static final String EVENT_NAME = "adsRequest";
@@ -1246,6 +1246,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 if ((rewardedAd != null) && rewardedAd.rewardedAd != null) {
                                     CoronaAdmobFullScreenDelegate delegate = new CoronaAdmobFullScreenDelegate(TYPE_REWARDEDVIDEO, adUnitId);
                                     delegate.coronaAdOpened();
+                                    rewardedAd.rewardedAd.setFullScreenContentCallback(delegate);
                                     rewardedAd.rewardedAd.show(coronaActivity, delegate);
                                     rewardedAd.rewardedAd = null;
                                 } else {
