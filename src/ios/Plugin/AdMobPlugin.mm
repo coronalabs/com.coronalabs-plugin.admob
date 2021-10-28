@@ -380,7 +380,6 @@ AdMobPlugin::init(lua_State *L)
 	
 	// initialize the SDK
 	[GADMobileAds.sharedInstance disableSDKCrashReporting];
-	[GADMobileAds.sharedInstance disableAutomatedInAppPurchaseReporting];
 	bool noAtt=true;
 	if (@available(iOS 14, tvOS 14, *)) {
 		if([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSUserTrackingUsageDescription"]) {
