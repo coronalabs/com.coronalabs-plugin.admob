@@ -33,7 +33,7 @@
 // ----------------------------------------------------------------------------
 
 #define PLUGIN_NAME        "plugin.admob"
-#define PLUGIN_VERSION     "1.2.6"
+#define PLUGIN_VERSION     "1.3.0"
 
 static const char EVENT_NAME[]    = "adsRequest";
 static const char PROVIDER_NAME[] = "admob";
@@ -42,6 +42,7 @@ static const char PROVIDER_NAME[] = "admob";
 static const char TYPE_BANNER[]        = "banner";
 static const char TYPE_INTERSTITIAL[]  = "interstitial";
 static const char TYPE_REWARDEDVIDEO[] = "rewardedVideo";
+static const char TYPE_REWARDEDINTERSTITIAL[] = "rewardedInterstitial";
 
 // banner alignments
 static const char ALIGN_TOP[]    = "top";
@@ -51,7 +52,8 @@ static const char ALIGN_BOTTOM[] = "bottom";
 static const NSArray *validAdTypes = @[
 	@(TYPE_BANNER),
 	@(TYPE_INTERSTITIAL),
-	@(TYPE_REWARDEDVIDEO)
+	@(TYPE_REWARDEDVIDEO),
+    @(TYPE_REWARDEDINTERSTITIAL)
 ];
 
 // event phases
@@ -725,7 +727,48 @@ AdMobPlugin::load(lua_State *L)
 			}
 
 		}];
-	}
+	}else if (UTF8IsEqual(adType, TYPE_REWARDEDINTERSTITIAL)) {
+        
+        // create ad instance object (stores additional info about the ad not available in GADRewardedAd)
+        adInstance = [[[CoronaAdMobAdInstance alloc] initWithAd:nil adType:@(adType)] autorelease];
+        
+        // save for future use
+        admobObjects[@(TYPE_REWARDEDINTERSTITIAL)] = @(adUnitId);
+        admobObjects[@(adUnitId)] = adInstance;
+        [GADRewardedInterstitialAd
+               loadWithAdUnitID:@(adUnitId)
+                        request:[GADRequest request]
+              completionHandler:^(
+                  GADRewardedInterstitialAd* _Nullable rewardedInterstitialAd,
+                  NSError* _Nullable error) {
+                      if (error) {
+                          // send Corona Lua event
+                          NSDictionary *coronaEvent = @{
+                              @(CoronaEventPhaseKey()) : PHASE_FAILED,
+                              @(CoronaEventTypeKey()) : @(TYPE_REWARDEDINTERSTITIAL),
+                              @(CoronaEventIsErrorKey()) : @(true),
+                              @(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+                              CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedInterstitialAd reward:nil error:error]
+                          };
+                          [admobDelegate dispatchLuaEvent:coronaEvent];
+                          
+                          adInstance.isLoaded = false;
+                      } else {
+                          rewardedInterstitialAd.fullScreenContentDelegate = admobDelegate;
+                          adInstance.adInstance = rewardedInterstitialAd;
+                          // send Corona Lua event
+                          NSDictionary *coronaEvent = @{
+                              @(CoronaEventPhaseKey()) : PHASE_LOADED,
+                              @(CoronaEventTypeKey()) : @(TYPE_REWARDEDINTERSTITIAL),
+                              CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedInterstitialAd]
+                          };
+                          [admobDelegate dispatchLuaEvent:coronaEvent];
+                          
+                          adInstance.isLoaded = true;
+                      }
+              }
+        ];
+    }
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
 		
 		// calculate the Corona->device coordinate ratio
@@ -938,6 +981,24 @@ AdMobPlugin::show(lua_State *L)
 			[admobDelegate dispatchLuaEvent:coronaEvent];
 		}];
 	}
+    else if (UTF8IsEqual(adType, TYPE_REWARDEDINTERSTITIAL)) {
+        GADRewardedInterstitialAd *rewardedInterstitial = (GADRewardedInterstitialAd *)adInstance.adInstance;
+        if (! adInstance.isLoaded ) {
+            logMsg(L, WARNING_MSG, MsgFormat(@"Rewarded Interstitial not loaded for adUnitId '%@'", adUnitId));
+            return 0;
+        }
+        [rewardedInterstitial presentFromRootViewController:library.coronaViewController
+                                        userDidEarnRewardHandler:^{
+            // send Corona Lua event
+            NSDictionary *coronaEvent = @{
+                @(CoronaEventPhaseKey()) : PHASE_REWARD,
+                @(CoronaEventTypeKey()) : @(TYPE_REWARDEDINTERSTITIAL),
+                CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:rewardedInterstitial reward:rewardedInterstitial.adReward]
+            };
+            [admobDelegate dispatchLuaEvent:coronaEvent];
+        }];
+       
+    }
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
 		GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
 		if (! adInstance.isLoaded) {
@@ -1353,7 +1414,9 @@ AdMobPlugin::isLoaded(lua_State *L)
 		return @(TYPE_REWARDEDVIDEO);
 	} else if ([ad isKindOfClass:[GADInterstitialAd class]]) {
 		return  @(TYPE_INTERSTITIAL);
-	}
+	}else if ([ad isKindOfClass:[GADRewardedInterstitialAd class]]) {
+        return  @(TYPE_REWARDEDINTERSTITIAL);
+    }
 	return @"UNKNOWN";
 }
 
