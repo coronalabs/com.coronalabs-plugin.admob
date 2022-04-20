@@ -1,2 +1,6 @@
 rootProject.name = "AdMob Plugin"
 include("app", "plugin")
+
+if (settings.hasProperty('coronaExpansionFileName')) {
+	include("preloadedAssets")
+}
