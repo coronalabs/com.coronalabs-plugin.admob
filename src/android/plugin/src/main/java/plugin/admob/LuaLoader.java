@@ -637,7 +637,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
             String adType;
             String adUnitId = null;
-            boolean childSafe = false;
+            Boolean childSafe = null;
             String maxAdContentRating = null;
             boolean designedForFamilies = false;
             boolean localTestMode = false;
@@ -790,7 +790,10 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 builder.addKeyword(keywords.get(keywordIndex));
                 keywordIndex++;
             }
-            RequestConfiguration.Builder configurator = MobileAds.getRequestConfiguration().toBuilder().setTagForChildDirectedTreatment(childSafe ? RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE : RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
+            RequestConfiguration.Builder configurator = MobileAds.getRequestConfiguration().toBuilder();
+            if (childSafe != null) {
+                configurator.setTagForChildDirectedTreatment(childSafe ? RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_TRUE : RequestConfiguration.TAG_FOR_CHILD_DIRECTED_TREATMENT_FALSE);
+            }
             if (maxAdContentRating != null) {
                 configurator.setMaxAdContentRating(maxAdContentRating);
             }

@@ -5,3 +5,4 @@ build/
 **xcuser**
 BuiltPlugin/
 src/ios/libplugin_admob.a
+.DS_Store
