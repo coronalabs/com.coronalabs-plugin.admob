@@ -33,7 +33,7 @@
 // ----------------------------------------------------------------------------
 
 #define PLUGIN_NAME        "plugin.admob"
-#define PLUGIN_VERSION     "1.3.0"
+#define PLUGIN_VERSION     "1.4.0"
 
 static const char EVENT_NAME[]    = "adsRequest";
 static const char PROVIDER_NAME[] = "admob";
@@ -770,7 +770,12 @@ AdMobPlugin::load(lua_State *L)
         ];
     }
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
-		
+		//Check if banner is already loaded and destory
+        CoronaAdMobAdInstance *adInstance = admobObjects[@(adUnitId)];
+        if(adInstance.adInstance){
+            GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
+            [banner removeFromSuperview];
+        }
 		// calculate the Corona->device coordinate ratio
 		// we use Corona's built-in point conversion to take advantage of any device specific logic in the Corona core
 		// we also need to re-calculate this value on every load as the ratio can change between orientation changes
@@ -1000,6 +1005,7 @@ AdMobPlugin::show(lua_State *L)
        
     }
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
+    
 		GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
 		if (! adInstance.isLoaded) {
 			logMsg(L, WARNING_MSG, MsgFormat(@"Banner not loaded for adUnitId '%@'", adUnitId));
