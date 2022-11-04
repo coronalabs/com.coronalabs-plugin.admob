@@ -770,12 +770,6 @@ AdMobPlugin::load(lua_State *L)
         ];
     }
 	else if (UTF8IsEqual(adType, TYPE_BANNER)) {
-		//Check if banner is already loaded and destory
-        CoronaAdMobAdInstance *adInstance = admobObjects[@(adUnitId)];
-        if(adInstance.adInstance){
-            GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
-            [banner removeFromSuperview];
-        }
 		// calculate the Corona->device coordinate ratio
 		// we use Corona's built-in point conversion to take advantage of any device specific logic in the Corona core
 		// we also need to re-calculate this value on every load as the ratio can change between orientation changes
@@ -790,19 +784,25 @@ AdMobPlugin::load(lua_State *L)
 		GADAdSize adSize = GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(library.coronaViewController.view.frame.size.width);
 		
 		// initialize object and set delegate
-		GADBannerView *banner = [[GADBannerView alloc] initWithAdSize:adSize];
-		banner.translatesAutoresizingMaskIntoConstraints = NO;
-		[banner setDelegate:admobDelegate];
-		[banner setAdUnitID:@(adUnitId)];
-		[banner setRootViewController:library.coronaViewController];
-		
-		// create ad instance object (stores additional info about the ad not available in GADBannerView)
-		adInstance = [[CoronaAdMobAdInstance alloc] initWithAd:banner adType:@(adType)];
-		adInstance.viewController = library.coronaViewController;
-		
-		// save new banner for future use
-		admobObjects[@(TYPE_BANNER)] = @(adUnitId);
-		admobObjects[@(adUnitId)] = adInstance;
+		GADBannerView *banner;
+        //Check if banner is already loaded
+        CoronaAdMobAdInstance *adInstance = admobObjects[@(adUnitId)];
+        if(adInstance.adInstance){
+            banner = (GADBannerView *)adInstance.adInstance;
+        }else{
+            banner = [[GADBannerView alloc] initWithAdSize:adSize];
+            banner.translatesAutoresizingMaskIntoConstraints = NO;
+            [banner setDelegate:admobDelegate];
+            [banner setAdUnitID:@(adUnitId)];
+            [banner setRootViewController:library.coronaViewController];
+            // create ad instance object (stores additional info about the ad not available in GADBannerView)
+            adInstance = [[CoronaAdMobAdInstance alloc] initWithAd:banner adType:@(adType)];
+            adInstance.viewController = library.coronaViewController;
+            
+            // save new banner for future use
+            admobObjects[@(TYPE_BANNER)] = @(adUnitId);
+            admobObjects[@(adUnitId)] = adInstance;
+        }
 		
 		// load the banner
 		GADRequest *request = [GADRequest request];
