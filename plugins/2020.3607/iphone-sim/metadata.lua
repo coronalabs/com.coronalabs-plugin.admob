@@ -4,8 +4,9 @@ local metadata =
 	{
 		format = 'staticLibrary',
 		staticLibs = { 'plugin_admob', },
-		frameworks = { 'GoogleMobileAds', 'UserMessagingPlatform', 'FirebaseAnalytics', 'FirebaseCore','FirebaseCoreDiagnostics', 'FirebaseInstallations','GoogleAppMeasurement', 'GoogleAppMeasurementIdentitySupport', 'GoogleDataTransport', 'GoogleUtilities','nanopb', 'PromisesObjC' },
+		frameworks = { 'GoogleMobileAds', 'FirebaseAnalytics', 'FirebaseAnalyticsSwift', 'FirebaseCore','FirebaseCoreInternal', 'FirebaseInstallations','GoogleAppMeasurement', 'GoogleAppMeasurementIdentitySupport', 'GoogleUtilities','nanopb', 'FBLPromises' },
 		frameworksOptional = { 'AppTrackingTransparency', 'JavascriptCore', },
+		usesSwift=true,
 	},
 }
 

@@ -641,7 +641,7 @@ AdMobPlugin::load(lua_State *L)
 			[admobVendorDeviceID appendFormat:@"%02x", digest[i]];
 		}
 		
-		GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[kGADSimulatorID, admobDeviceID, admobVendorDeviceID];
+        GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[GADSimulatorID, admobDeviceID, admobVendorDeviceID];
 		NSLog(@"%s: Test mode active for device '%@'", PLUGIN_NAME, GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers);
 	}
 	
@@ -1456,8 +1456,9 @@ AdMobPlugin::isLoaded(lua_State *L)
 }
 
 /// Tells the delegate that the ad presented full screen content.
-- (void)adDidPresentFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad
+- (void)adWillPresentFullScreenContent:(nonnull id<GADFullScreenPresentingAd>)ad
 {
+    
 	// send Corona Lua event
 	NSDictionary *coronaEvent = @{
 		@(CoronaEventPhaseKey()) : PHASE_DISPLAYED,
