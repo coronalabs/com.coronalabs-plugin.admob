@@ -1435,7 +1435,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                         }
 
                         AdView banner = (AdView) admobObjects.get(adUnitId);
-                        if (banner.getVisibility() != View.VISIBLE) {
+                        if (banner == null || banner.getVisibility() != View.VISIBLE) {
                             logMsg(WARNING_MSG, "Banner not visible");
                             return;
                         }

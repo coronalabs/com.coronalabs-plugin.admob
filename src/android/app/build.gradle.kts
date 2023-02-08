@@ -124,7 +124,7 @@ val parsedBuildProperties: JsonObject = run {
 }
 
 extra["minSdkVersion"] = parsedBuildProperties.lookup<Any?>("buildSettings.android.minSdkVersion").firstOrNull()?.toString()?.toIntOrNull()
-        ?: 16
+        ?: 19
 
 val coronaBuilder = if (windows) {
     "$nativeDir/Corona/win/bin/CoronaBuilder.exe"
@@ -185,10 +185,10 @@ android {
         isCheckReleaseBuilds = false
     }
     buildToolsVersion("29.0.3")
-    compileSdkVersion(29)
+    compileSdkVersion(32 )
     defaultConfig {
         applicationId = coronaAppPackage
-        targetSdkVersion(29)
+        targetSdkVersion(32)
         minSdkVersion(extra["minSdkVersion"] as Int)
         versionCode = coronaVersionCode
         versionName = coronaVersionName
