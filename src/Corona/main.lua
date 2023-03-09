@@ -79,7 +79,8 @@ local testModeButton
 local showTestWarning = true
 local iReady
 local bReady
-local rReady
+local riReady
+local aReady
 local bannerLine
 local oldOrientation
 
@@ -88,14 +89,18 @@ if platformName == "Android" then
   adUnits = {
     interstitial="ca-app-pub-7897780601981890/4910592366",
     rewardedVideo="ca-app-pub-7897780601981890/6354495960",
-    banner="ca-app-pub-3940256099942544/6300978111"
+    banner="ca-app-pub-3940256099942544/6300978111",
+    appOpen="ca-app-pub-3940256099942544/3419835294",
+    rewardedInterstitial="ca-app-pub-3940256099942544/5354046379"
   }
 elseif platformName == "iPhone OS" then
   appId = "ca-app-pub-7897780601981890~3573459965"
   adUnits = {
     interstitial="ca-app-pub-7897780601981890/6526926360",
     rewardedVideo="ca-app-pub-7897780601981890/8003659567",
-    banner="ca-app-pub-7897780601981890/5050193163"
+    banner="ca-app-pub-7897780601981890/5050193163",
+    appOpen="ca-app-pub-3940256099942544/5662855259",
+    rewardedInterstitial="ca-app-pub-3940256099942544/6978759866"
   }
 else
   print "Unsupported platform"
@@ -114,6 +119,10 @@ local admobListener = function(event)
       setGreen(rReady)
     elseif (event.type == "banner") then
       setGreen(bReady)
+    elseif (event.type == "rewardedInterstitial") then
+      setGreen(riReady)
+    elseif (event.type == "appOpen") then
+      setGreen(aReady)
     end
   end
 end
@@ -219,6 +228,64 @@ local showRewardedButton = widget.newButton {
   end
 }
 
+
+local appOpenBG = display.newRect(0,0,320,30)
+
+local appOpenLabel = display.newText {
+  text = "APP OPEN",
+  font = display.systemFontBold,
+  fontSize = 18,
+}
+appOpenLabel:setTextColor(1)
+
+local loadAppOpenButton = widget.newButton {
+  label = "Load",
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    setRed(bReady)
+    admob.load("appOpen", {adUnitId=adUnits.appOpen, testMode=testMode})
+  end
+}
+local showAppOpenButton = widget.newButton {
+  label = "Show",
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    admob.show("appOpen")
+  end
+}
+
+local riLabel = display.newText {
+  text = "REWARD INTER",
+  font = display.systemFontBold,
+  fontSize = 18,
+}
+riLabel:setTextColor(1)
+
+local loadRIButton = widget.newButton {
+  label = "Load",
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    setRed(bReady)
+    admob.load("rewardedInterstitial", {adUnitId=adUnits.rewardedInterstitial, testMode=testMode})
+  end
+}
+local showRIButton = widget.newButton {
+  label = "Show",
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    admob.show("rewardedInterstitial")
+  end
+}
+
+
 local bannerBG = display.newRect(0,0,320,30)
 bannerBG:setFillColor(1,0,0,0.7)
 
@@ -302,6 +369,16 @@ bReady.strokeWidth = 2
 bReady:setStrokeColor(0)
 setRed(bReady)
 
+aReady = display.newCircle(10, 10, 6)
+aReady.strokeWidth = 2
+aReady:setStrokeColor(0)
+setRed(aReady)
+
+riReady = display.newCircle(10, 10, 6)
+riReady.strokeWidth = 2
+riReady:setStrokeColor(0)
+setRed(riReady)
+
 rReady = display.newCircle(10, 10, 6)
 rReady.strokeWidth = 2
 rReady:setStrokeColor(0)
@@ -338,60 +415,81 @@ local layoutDisplayObjects = function(orientation)
   end
 
   testModeButton.x = display.contentCenterX
-  testModeButton.y = 95
+  testModeButton.y = 80
 
-  interstitialBG.x, interstitialBG.y = display.contentCenterX, 140
+  interstitialBG.x, interstitialBG.y = display.contentCenterX, 110
   interstitialBG:setFillColor(1,0,0,0.7)
 
   interstitialLabel.x = display.contentCenterX - 70
-  interstitialLabel.y = 140
+  interstitialLabel.y = 110
 
   iReady.x = display.contentCenterX - 140
-  iReady.y = 140
+  iReady.y = 110
   setRed(iReady)
 
   loadInterstitialButton.x = display.contentCenterX - 120
-  loadInterstitialButton.y = interstitialLabel.y + 40
+  loadInterstitialButton.y = interstitialLabel.y + 30
 
   showInterstitialButton.x = display.contentCenterX - 50
-  showInterstitialButton.y = interstitialLabel.y + 40
+  showInterstitialButton.y = interstitialLabel.y + 30
+
+  appOpenBG.x, appOpenBG.y = display.contentCenterX, 180
+  appOpenBG:setFillColor(1,0,0,0.7)
+
+  appOpenLabel.x, appOpenLabel.y =  display.contentCenterX - 70, appOpenBG.y
+
+  aReady.x = display.contentCenterX - 140
+  aReady.y = 180
+  setRed(aReady)
+
+  loadAppOpenButton.x, loadAppOpenButton.y = display.contentCenterX - 120, appOpenLabel.y + 30
+  showAppOpenButton.x, showAppOpenButton.y = display.contentCenterX - 50, appOpenLabel.y + 30
+
+  riLabel.x, riLabel.y =  display.contentCenterX + 60, appOpenBG.y
+
+  loadRIButton.x, loadRIButton.y =  display.contentCenterX + 50, riLabel.y + 30
+  showRIButton.x, showRIButton.y =  display.contentCenterX + 120, riLabel.y + 30
+
+  riReady.x = display.contentCenterX + 140
+  riReady.y = appOpenBG.y
+  setRed(rReady)
 
   rewardedLabel.x = display.contentCenterX + 80
-  rewardedLabel.y = 140
+  rewardedLabel.y = 110
 
   rReady.x = display.contentCenterX + 140
-  rReady.y = 140
+  rReady.y = 110
   setRed(rReady)
 
   loadRewardedButton.x = display.contentCenterX + 50
-  loadRewardedButton.y = rewardedLabel.y + 40
+  loadRewardedButton.y = rewardedLabel.y + 30
 
   showRewardedButton.x = display.contentCenterX + 120
-  showRewardedButton.y = rewardedLabel.y + 40
+  showRewardedButton.y = rewardedLabel.y + 30
 
-  bannerBG.x, bannerBG.y = display.contentCenterX, 220
+  bannerBG.x, bannerBG.y = display.contentCenterX, 260
 
   bannerLabel.x = display.contentCenterX
-  bannerLabel.y = 220
+  bannerLabel.y = 260
 
   bReady.x = display.contentCenterX + 140
-  bReady.y = 220
+  bReady.y = 260
   setRed(bReady)
 
   loadBannerButton.x = display.contentCenterX - 50
-  loadBannerButton.y = bannerLabel.y + 40
+  loadBannerButton.y = bannerLabel.y + 30
 
   hideBannerButton.x = display.contentCenterX + 50
-  hideBannerButton.y = bannerLabel.y + 40
+  hideBannerButton.y = bannerLabel.y + 30
 
   showBannerButtonB.x = display.contentCenterX
-  showBannerButtonB.y = bannerLabel.y + 80
+  showBannerButtonB.y = bannerLabel.y + 50
 
   showBannerButtonT.x = display.contentCenterX - 100
-  showBannerButtonT.y = bannerLabel.y + 80
+  showBannerButtonT.y = bannerLabel.y + 50
 
   showBannerButtonBLine.x = display.contentCenterX + 100
-  showBannerButtonBLine.y = bannerLabel.y + 80
+  showBannerButtonBLine.y = bannerLabel.y + 50
 end
 
 local onOrientationChange = function(event)

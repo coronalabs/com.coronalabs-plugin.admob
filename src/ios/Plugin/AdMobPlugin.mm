@@ -43,6 +43,7 @@ static const char TYPE_BANNER[]        = "banner";
 static const char TYPE_INTERSTITIAL[]  = "interstitial";
 static const char TYPE_REWARDEDVIDEO[] = "rewardedVideo";
 static const char TYPE_REWARDEDINTERSTITIAL[] = "rewardedInterstitial";
+static const char TYPE_APPOPEN[] = "appOpen";
 
 // banner alignments
 static const char ALIGN_TOP[]    = "top";
@@ -53,7 +54,8 @@ static const NSArray *validAdTypes = @[
 	@(TYPE_BANNER),
 	@(TYPE_INTERSTITIAL),
 	@(TYPE_REWARDEDVIDEO),
-    @(TYPE_REWARDEDINTERSTITIAL)
+    @(TYPE_REWARDEDINTERSTITIAL),
+    @(TYPE_APPOPEN)
 ];
 
 // event phases
@@ -807,7 +809,47 @@ AdMobPlugin::load(lua_State *L)
 		// load the banner
 		GADRequest *request = [GADRequest request];
 		[banner loadRequest:request];
-	}
+	}else if (UTF8IsEqual(adType, TYPE_APPOPEN)) {
+        adInstance = [[[CoronaAdMobAdInstance alloc] initWithAd:nil adType:@(adType)] autorelease];
+        // save for future use
+        admobObjects[@(TYPE_APPOPEN)] = @(adUnitId);
+        admobObjects[@(adUnitId)] = adInstance;
+        [GADAppOpenAd loadWithAdUnitID:@(adUnitId)
+                 request:[GADRequest request]
+                orientation:UIInterfaceOrientationPortrait
+                     completionHandler:^(GADAppOpenAd *_Nullable appOpenAd, NSError *_Nullable error) {
+             if (error) {
+                 // send Corona Lua event
+                 NSDictionary *coronaEvent = @{
+                     @(CoronaEventPhaseKey()) : PHASE_FAILED,
+                     @(CoronaEventTypeKey()) : @(TYPE_APPOPEN),
+                     @(CoronaEventIsErrorKey()) : @(true),
+                     @(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+                     CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:appOpenAd reward:nil error:error]
+                 };
+                 [admobDelegate dispatchLuaEvent:coronaEvent];
+                 
+                 adInstance.isLoaded = false;
+               
+             }else{
+                 appOpenAd.fullScreenContentDelegate = admobDelegate;
+                 adInstance.adInstance = appOpenAd;
+                 // send Corona Lua event
+                 NSDictionary *coronaEvent = @{
+                     @(CoronaEventPhaseKey()) : PHASE_LOADED,
+                     @(CoronaEventTypeKey()) : @(TYPE_APPOPEN),
+                     CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForAd:appOpenAd]
+                 };
+                 [admobDelegate dispatchLuaEvent:coronaEvent];
+                 
+                 adInstance.isLoaded = true;
+                 adInstance.adInstance = appOpenAd;
+                 
+             }
+            
+       }];
+        
+    }
 	
 	return 0;
 }
@@ -943,6 +985,7 @@ AdMobPlugin::show(lua_State *L)
 		adUnitId = [NSString stringWithUTF8String:adUnitIdParam];
 	}
 	else { // default
+        NSLog(@"run123 %@", admobObjects);
 		adUnitId = admobObjects[@(adType)];
 		if (adUnitId == nil) {
 			logMsg(L, WARNING_MSG, MsgFormat(@"%s not loaded", adType));
@@ -1046,7 +1089,17 @@ AdMobPlugin::show(lua_State *L)
 		
 		// send Lua event
 		[admobDelegate bannerViewWillPresentScreen:banner];
-	}
+	}else if (UTF8IsEqual(adType, TYPE_APPOPEN)) {
+        
+        GADAppOpenAd *appOpen = (GADAppOpenAd *)adInstance.adInstance;
+        if (! adInstance.isLoaded) {
+            logMsg(L, WARNING_MSG, MsgFormat(@"App Open not loaded for adUnitId '%@'", adUnitId));
+            return 0;
+        }
+        
+        
+        [appOpen presentFromRootViewController:library.coronaViewController];
+    }
 	
 	return 0;
 }
@@ -1551,6 +1604,7 @@ AdMobPlugin::isLoaded(lua_State *L)
 	CoronaAdMobAdInstance *adInstance = admobObjects[bannerView.adUnitID];
 	adInstance.isLoaded = false;
 }
+
 
 @end
 
