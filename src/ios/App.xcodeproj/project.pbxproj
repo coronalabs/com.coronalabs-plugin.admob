@@ -71,6 +71,7 @@
 		DB0B8A5A299202060039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A4E299202020039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework */; };
 		DB0B8A5B299202070039E6D3 /* nanopb.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A4F299202020039E6D3 /* nanopb.xcframework */; };
 		DB2CCB2D2991F5B200267BFF /* Blank.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB2CCB2C2991F5B200267BFF /* Blank.swift */; };
+		DBE8C63A29BB856B004AC70D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBE8C63929BB856B004AC70D /* SwiftUI.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		E640B2F21BFC00B00031FAE9 /* AssetsLibrary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E640B2F11BFC00B00031FAE9 /* AssetsLibrary.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		E640B2F41BFC00BA0031FAE9 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E640B2F31BFC00BA0031FAE9 /* Photos.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		F51C66D61EE0D3B20040E4BE /* libplugin_admob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A4E253E2166DE7C800DCDC2C /* libplugin_admob.a */; };
@@ -169,6 +170,7 @@
 		DB0B8A4E299202020039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = GoogleAppMeasurementIdentitySupport.xcframework; path = EmbeddedFrameworks/GoogleAppMeasurementIdentitySupport.xcframework; sourceTree = "<group>"; };
 		DB0B8A4F299202020039E6D3 /* nanopb.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = nanopb.xcframework; path = EmbeddedFrameworks/nanopb.xcframework; sourceTree = "<group>"; };
 		DB2CCB2C2991F5B200267BFF /* Blank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Blank.swift; sourceTree = "<group>"; };
+		DBE8C63929BB856B004AC70D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		E640B2F11BFC00B00031FAE9 /* AssetsLibrary.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AssetsLibrary.framework; path = System/Library/Frameworks/AssetsLibrary.framework; sourceTree = SDKROOT; };
 		E640B2F31BFC00BA0031FAE9 /* Photos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Photos.framework; path = System/Library/Frameworks/Photos.framework; sourceTree = SDKROOT; };
 		F54A40BD1EE07F9100AF417D /* build.settings */ = {isa = PBXFileReference; lastKnownFileType = text; name = build.settings; path = ../Corona/build.settings; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 				A484118515128D5D0074BD57 /* MobileCoreServices.framework in Frameworks */,
 				A484118615128D5D0074BD57 /* OpenAL.framework in Frameworks */,
 				A484112615114F700074BD57 /* OpenGLES.framework in Frameworks */,
+				DBE8C63A29BB856B004AC70D /* SwiftUI.framework in Frameworks */,
 				F5C7971826BC8592005691C1 /* AppTrackingTransparency.framework in Frameworks */,
 				A484118715128D5D0074BD57 /* QuartzCore.framework in Frameworks */,
 				A484118815128D5D0074BD57 /* Security.framework in Frameworks */,
@@ -283,6 +286,7 @@
 		A484111C15114F700074BD57 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DBE8C63929BB856B004AC70D /* SwiftUI.framework */,
 				DB0B8A45299202000039E6D3 /* FBLPromises.xcframework */,
 				DB0B8A48299202000039E6D3 /* FirebaseAnalytics.xcframework */,
 				DB0B8A4C299202010039E6D3 /* FirebaseAnalyticsSwift.xcframework */,
