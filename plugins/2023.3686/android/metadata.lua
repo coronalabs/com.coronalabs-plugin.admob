@@ -3,14 +3,14 @@ local metadata =
     plugin =
     {
         format = 'jar',
-        manifest = 
+        manifest =
         {
             permissions = {},
             usesPermissions =
             {
                 "android.permission.INTERNET",
             },
-            usesFeatures = 
+            usesFeatures =
             {
             },
             applicationChildElements =
@@ -18,11 +18,8 @@ local metadata =
             }
         }
     },
-    
+
     coronaManifest = {
-        dependencies = {
-            ["shared.google.play.services.ads"] = "com.coronalabs"
-        }
     }
 }
 
