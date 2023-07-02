@@ -22,6 +22,7 @@
 #import "UIColor+HexString.h"
 #import "AdMobPlugin.h"
 #import <GoogleMobileAds/GoogleMobileAds.h>
+#include <UserMessagingPlatform/UserMessagingPlatform.h>
 
 // some macros to make life easier, and code more readable
 #define UTF8StringWithFormat(format, ...) [[NSString stringWithFormat:format, ##__VA_ARGS__] UTF8String]
@@ -33,7 +34,7 @@
 // ----------------------------------------------------------------------------
 
 #define PLUGIN_NAME        "plugin.admob"
-#define PLUGIN_VERSION     "1.4.0"
+#define PLUGIN_VERSION     "1.5.0"
 
 static const char EVENT_NAME[]    = "adsRequest";
 static const char PROVIDER_NAME[] = "admob";
@@ -45,6 +46,9 @@ static const char TYPE_REWARDEDVIDEO[] = "rewardedVideo";
 static const char TYPE_REWARDEDINTERSTITIAL[] = "rewardedInterstitial";
 static const char TYPE_APPOPEN[] = "appOpen";
 
+// form types
+static const char TYPE_UMPFORM[]        = "ump";
+
 // banner alignments
 static const char ALIGN_TOP[]    = "top";
 static const char ALIGN_BOTTOM[] = "bottom";
@@ -55,7 +59,7 @@ static const NSArray *validAdTypes = @[
 	@(TYPE_INTERSTITIAL),
 	@(TYPE_REWARDEDVIDEO),
     @(TYPE_REWARDEDINTERSTITIAL),
-    @(TYPE_APPOPEN)
+    @(TYPE_APPOPEN),
 ];
 
 // event phases
@@ -131,6 +135,7 @@ static NSString * const DATA_ADUNIT_ID_KEY = @"adUnitId";
 + (NSString *)getJSONStringForAd:(NSObject *)ad reward:(GADAdReward *)reward;
 + (NSString *)getJSONStringForAd:(NSObject *)ad error:(NSError *)error;
 + (NSString *)getJSONStringForAd:(NSObject *)ad;
++ (NSString *)getJSONStringForError:(NSError *)error;
 
 @end
 
@@ -161,6 +166,10 @@ public: // plugin API
 	static int hide(lua_State *L);
 	static int height(lua_State *L);
 	static int setVideoAdVolume(lua_State *L);
+    static int updateConsentForm(lua_State *L);
+    static int loadConsentForm(lua_State *L);
+    static int showConsentForm(lua_State *L);
+    static int getConsentFormStatus(lua_State *L);
 	
 private: // internal helper functions
 	static void logMsg(lua_State *L, NSString *msgType,  NSString *errorMsg);
@@ -234,6 +243,11 @@ AdMobPlugin::Open( lua_State *L )
 			{"hide", hide},
 			{"height", height},
 			{"setVideoAdVolume", setVideoAdVolume},
+            {"updateConsentForm", updateConsentForm},
+            {"loadConsentForm", loadConsentForm},
+            {"showConsentForm", showConsentForm},
+            {"getConsentFormStatus", getConsentFormStatus},
+            
 			{NULL, NULL}
 		};
 		
@@ -985,7 +999,6 @@ AdMobPlugin::show(lua_State *L)
 		adUnitId = [NSString stringWithUTF8String:adUnitIdParam];
 	}
 	else { // default
-        NSLog(@"run123 %@", admobObjects);
 		adUnitId = admobObjects[@(adType)];
 		if (adUnitId == nil) {
 			logMsg(L, WARNING_MSG, MsgFormat(@"%s not loaded", adType));
@@ -1379,6 +1392,246 @@ AdMobPlugin::isLoaded(lua_State *L)
 	return 1;
 }
 
+// [Lua] updateConsentForm( options )
+int
+AdMobPlugin::updateConsentForm(lua_State *L)
+{
+    Self *context = ToLibrary(L);
+    
+    if (! context) { // abort if no valid context
+        return 0;
+    }
+    
+    Self& library = *context;
+    
+    library.functionSignature = @"admob.updateConsentForm([options])";
+    
+    if (! isSDKInitialized(L)) {
+        return 0;
+    }
+    
+    // check number or args
+    int nargs = lua_gettop(L);
+    if (nargs > 1) {
+        logMsg(L, ERROR_MSG, MsgFormat(@"Expected 1 or 0 arguments, got %d", nargs));
+        return 0;
+    }
+    
+    UMPRequestParameters *parameters = [[UMPRequestParameters alloc] init];
+    // get the form info
+    if (lua_type(L, 1) == LUA_TTABLE) {
+        lua_getfield(L, 1, "underage");
+        if( lua_isboolean(L, -1) ){
+            parameters.tagForUnderAgeOfConsent = lua_toboolean(L, -1);
+        }
+        lua_pop(L, 1);
+        lua_getfield(L, 1, "debug");
+        if( lua_istable(L, -1) ){
+            UMPDebugSettings *debugSettings = [[UMPDebugSettings alloc] init];
+            lua_getfield(L, -1, "geography");
+            if(lua_isstring(L, -1)){
+                if(UTF8IsEqual(lua_tostring(L, -1), "EEA")){
+                    debugSettings.geography = UMPDebugGeographyEEA;
+                }else if(UTF8IsEqual(lua_tostring(L, -1), "NotEEA")){
+                    debugSettings.geography = UMPDebugGeographyNotEEA;
+                }else{
+                    debugSettings.geography = UMPDebugGeographyDisabled;
+                }
+            }
+            lua_pop(L, 1);
+            lua_getfield(L, -1, "testDeviceIdentifiers");
+            if(lua_istable(L, -1)){
+                size_t arrayLength = lua_objlen(L, -1);
+                if (arrayLength > 0)
+                {
+                    NSMutableArray *myIds = [[NSMutableArray alloc] init];
+                    for (int index = 1; index <= arrayLength; index++)
+                    {
+                        lua_rawgeti(L, -1, index);
+                        if(lua_isstring(L, -1)){
+                            
+                            [myIds addObject:[NSString stringWithUTF8String:lua_tostring(L, -1)]];
+                        }
+                        lua_pop(L, 1);
+                    }
+                    debugSettings.testDeviceIdentifiers = myIds;
+                }
+            }
+            lua_pop(L, 1);
+            parameters.debugSettings = debugSettings;
+        }
+        lua_pop(L, 1);
+    } else {
+        logMsg(L, ERROR_MSG, MsgFormat(@"adType (table) expected, got %s", luaL_typename(L, 1)));
+        return 0;
+    }
+    // Request an update to the consent information.
+    [UMPConsentInformation.sharedInstance
+        requestConsentInfoUpdateWithParameters:parameters
+        completionHandler:^(NSError *_Nullable error) {
+        if (error) {
+            // send Corona Lua event
+            NSDictionary *coronaEvent = @{
+                @(CoronaEventPhaseKey()) : PHASE_FAILED,
+                @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+                @(CoronaEventIsErrorKey()) : @(true),
+                @(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+                CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForError:error]
+            };
+            [admobDelegate dispatchLuaEvent:coronaEvent];
+        } else {
+            // send Corona Lua event
+            NSDictionary *coronaEvent = @{
+                @(CoronaEventPhaseKey()) : PHASE_REFRESHED,
+                @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+                @(CoronaEventIsErrorKey()) : @(false),
+            };
+            [admobDelegate dispatchLuaEvent:coronaEvent];
+        }
+     }];
+    
+    return 0;
+}
+
+// [Lua] loadConsentForm( )
+int
+AdMobPlugin::loadConsentForm(lua_State *L)
+{
+    Self *context = ToLibrary(L);
+    
+    if (! context) { // abort if no valid context
+        return 0;
+    }
+    
+    Self& library = *context;
+    
+    library.functionSignature = @"admob.loadConsentForm( )";
+    
+    if (! isSDKInitialized(L)) {
+        return 0;
+    }
+    
+    
+    // load form
+    [UMPConsentForm
+     loadWithCompletionHandler:^(UMPConsentForm *form, NSError *error) {
+        CoronaAdMobAdInstance *adInstance = admobObjects[@"ump"];
+        if (error) {
+           // send Corona Lua event
+           NSDictionary *coronaEvent = @{
+               @(CoronaEventPhaseKey()) : PHASE_FAILED,
+               @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+               @(CoronaEventIsErrorKey()) : @(true),
+               @(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+               CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForError:error]
+           };
+            [admobDelegate dispatchLuaEvent:coronaEvent];
+            if(adInstance){
+                adInstance.isLoaded = false;
+            }
+        } else {
+            CoronaAdMobAdInstance *adInstance = admobObjects[@"ump"];
+            adInstance = [[[CoronaAdMobAdInstance alloc] initWithAd:form adType:@(TYPE_UMPFORM)] autorelease];
+            // send Corona Lua event
+            NSDictionary *coronaEvent = @{
+                @(CoronaEventPhaseKey()) : PHASE_LOADED,
+                @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+                @(CoronaEventIsErrorKey()) : @(false)
+            };
+            [admobDelegate dispatchLuaEvent:coronaEvent];
+            adInstance.isLoaded = true;
+        }
+     }];
+    
+    return 0;
+}
+
+// [Lua] showConsentForm( )
+int
+AdMobPlugin::showConsentForm(lua_State *L)
+{
+    Self *context = ToLibrary(L);
+    
+    if (! context) { // abort if no valid context
+        return 0;
+    }
+    
+    Self& library = *context;
+    
+    library.functionSignature = @"admob.showConsentForm( )";
+    
+    if (! isSDKInitialized(L)) {
+        return 0;
+    }
+    
+    // show form
+    CoronaAdMobAdInstance *adInstance = admobObjects[@"ump"];
+    
+    if(adInstance && adInstance.isLoaded == true){
+        UMPConsentForm *consentForm = (UMPConsentForm *)adInstance.adInstance;
+        // send Corona Lua event
+        NSDictionary *coronaEvent = @{
+            @(CoronaEventPhaseKey()) : PHASE_HIDDEN,
+            @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+            @(CoronaEventIsErrorKey()) : @(false)
+        };
+        [admobDelegate dispatchLuaEvent:coronaEvent];
+        
+        [consentForm presentFromViewController:library.coronaViewController
+            completionHandler:^(NSError *_Nullable dismissError) {
+            if (dismissError) {
+                // send Corona Lua event
+                NSDictionary *coronaEvent = @{
+                    @(CoronaEventPhaseKey()) : PHASE_FAILED,
+                    @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+                    @(CoronaEventIsErrorKey()) : @(true),
+                    @(CoronaEventResponseKey()) : RESPONSE_LOAD_FAILED,
+                    CORONA_EVENT_DATA_KEY : [CoronaAdMobDelegate getJSONStringForError:dismissError]
+                };
+                [admobDelegate dispatchLuaEvent:coronaEvent];
+            }else{
+                // send Corona Lua event
+                NSDictionary *coronaEvent = @{
+                    @(CoronaEventPhaseKey()) : PHASE_HIDDEN,
+                    @(CoronaEventTypeKey()) : @(TYPE_UMPFORM),
+                    @(CoronaEventIsErrorKey()) : @(false)
+                };
+                [admobDelegate dispatchLuaEvent:coronaEvent];
+            }
+        }];
+        
+    }
+    
+    
+    return 0;
+}
+
+// [Lua] getConsentFormStatus( )
+int
+AdMobPlugin::getConsentFormStatus(lua_State *L)
+{
+    if (UMPConsentInformation.sharedInstance.formStatus == UMPFormStatusAvailable) {
+        lua_pushstring(L, "available");
+    }else if (UMPConsentInformation.sharedInstance.formStatus == UMPFormStatusUnavailable) {
+        lua_pushstring(L, "unavailable");
+    }else {
+        lua_pushstring(L, "unknown");
+    }
+    
+    if(UMPConsentInformation.sharedInstance.consentStatus == UMPConsentStatusObtained){
+        lua_pushstring(L, "obtained");
+    }else if(UMPConsentInformation.sharedInstance.consentStatus == UMPConsentStatusRequired){
+        lua_pushstring(L, "required");
+    }else if(UMPConsentInformation.sharedInstance.consentStatus == UMPConsentStatusNotRequired){
+        lua_pushstring(L, "notRequired");
+    }else{
+        lua_pushstring(L, "unknown");
+    }
+    
+    return 2;
+}
+
+
 // ============================================================================
 // delegate implementation
 // ============================================================================
@@ -1409,10 +1662,12 @@ AdMobPlugin::isLoaded(lua_State *L)
 		dataDictionary[REWARD_ITEM] = [reward type];
 		dataDictionary[REWARD_AMOUNT] = [reward amount];
 	}
+    
+    if( ad != nil ){
+        dataDictionary[DATA_ADUNIT_ID_KEY] = [CoronaAdMobDelegate placementForAd:ad];
+    }
 	
-	dataDictionary[DATA_ADUNIT_ID_KEY] = [CoronaAdMobDelegate placementForAd:ad];
-	
-	NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataDictionary options:0 error:nil];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataDictionary options:0 error:nil];
 	
 	return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 }
@@ -1425,6 +1680,9 @@ AdMobPlugin::isLoaded(lua_State *L)
 }
 + (NSString *)getJSONStringForAd:(NSObject *)ad {
 	return [CoronaAdMobDelegate getJSONStringForAd:ad reward:nil error:nil];
+}
++ (NSString *)getJSONStringForError:(NSError *)error {
+    return [CoronaAdMobDelegate getJSONStringForAd:nil reward:nil error:error];
 }
 
 // dispatch a new Lua event

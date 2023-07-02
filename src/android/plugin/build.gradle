@@ -6,8 +6,6 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 32
-        versionCode 1
-        versionName "1.0"
     }
 }
 
@@ -19,6 +17,7 @@ afterEvaluate {
 dependencies {
     implementation ':Corona@aar'
     implementation 'com.google.android.gms:play-services-ads:21.5.0'
+    implementation 'com.google.android.ump:user-messaging-platform:2.0.0'
 }
 
 task exportAARToThePluginBinary {

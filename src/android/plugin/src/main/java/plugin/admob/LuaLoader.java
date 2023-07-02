@@ -25,6 +25,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.ansca.corona.CoronaActivity;
 import com.ansca.corona.CoronaEnvironment;
 import com.ansca.corona.CoronaLua;
@@ -54,6 +57,12 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
+import com.google.android.ump.ConsentDebugSettings;
+import com.google.android.ump.ConsentForm;
+import com.google.android.ump.ConsentInformation;
+import com.google.android.ump.ConsentRequestParameters;
+import com.google.android.ump.FormError;
+import com.google.android.ump.UserMessagingPlatform;
 import com.naef.jnlua.JavaFunction;
 import com.naef.jnlua.LuaState;
 import com.naef.jnlua.LuaType;
@@ -82,7 +91,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static final String PLUGIN_NAME = "plugin.admob";
-    private static final String PLUGIN_VERSION = "1.3.0";
+    private static final String PLUGIN_VERSION = "1.5.0";
     private static final String PLUGIN_SDK_VERSION = "0";//getVersionString();
 
     private static final String EVENT_NAME = "adsRequest";
@@ -94,6 +103,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static final String TYPE_REWARDEDVIDEO = "rewardedVideo";
     private static final String TYPE_REWARDEDINTERSTITIAL = "rewardedInterstitial";
     private static final String TYPE_APPOPEN = "appOpen";
+    private static final String TYPE_UMP= "ump";
 
     // banner alignments
     private static final String ALIGN_TOP = "top";
@@ -144,6 +154,8 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
 
     private static int coronaListener = CoronaLua.REFNIL;
     private static CoronaRuntimeTaskDispatcher coronaRuntimeTaskDispatcher = null;
+
+    private static ConsentForm umpForm = null;
 
     private static void invalidateAllViews() {
         final CoronaActivity activity = CoronaEnvironment.getCoronaActivity();
@@ -204,7 +216,11 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 new Show(),
                 new Hide(),
                 new Height(),
-                new SetVideoAdVolume()
+                new SetVideoAdVolume(),
+                new UpdateConsentForm(),
+                new LoadConsentForm(),
+                new ShowConsentForm(),
+                new GetConsentFormStatus(),
         };
         String libName = L.toString(1);
         L.register(libName, luaFunctions);
@@ -237,6 +253,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             validAdTypes.add(TYPE_REWARDEDINTERSTITIAL);
             validAdTypes.add(TYPE_BANNER);
             validAdTypes.add(TYPE_APPOPEN);
+            validAdTypes.add(TYPE_UMP);
 
             admobObjects.put(HAS_RECEIVED_INIT_EVENT_KEY, false);
         }
@@ -360,6 +377,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                     admobObjects.clear();
                     validAdTypes.clear();
                     coronaRuntimeTaskDispatcher = null;
+                    umpForm = null;
                     functionSignature = "";
                 }
             });
@@ -1627,6 +1645,320 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             luaState.pushNumber(height);
 
             return 1;
+        }
+    }
+
+    // [Lua] updateConsentForm( [options] )
+    private class UpdateConsentForm implements NamedJavaFunction {
+        /**
+         * Gets the name of the Lua function as it would appear in the Lua script.
+         *
+         * @return Returns the name of the custom Lua function.
+         */
+        @Override
+        public String getName() {
+            return "updateConsentForm";
+        }
+
+        /**
+         * This method is called when the Lua function is called.
+         * <p>
+         * Warning! This method is not called on the main UI thread.
+         *
+         * @param luaState Reference to the Lua state.
+         *                 Needed to retrieve the Lua function's parameters and to return values back to Lua.
+         * @return Returns the number of values to be returned by the Lua function.
+         */
+        @Override
+        public int invoke(final LuaState luaState) {
+            functionSignature = "admob.updateConsentForm( [options] )";
+
+            if (!isSDKInitialized()) {
+                return 0;
+            }
+
+            // check number of args
+            int nargs = luaState.getTop();
+            if (nargs > 1) {
+                logMsg(ERROR_MSG, "Expected 0 or 1 argument, got " + nargs);
+                return 0;
+            }
+
+            ConsentRequestParameters.Builder params = new ConsentRequestParameters.Builder();
+
+            // check for options table
+            if (!luaState.isNoneOrNil(1)) {
+                if (luaState.type(1) == LuaType.TABLE) {
+                    // traverse and validate all the options
+                    for (luaState.pushNil(); luaState.next(1); luaState.pop(1)) {
+                        String key = luaState.toString(-2);
+
+                        if (key.equals("underage")) {
+                            if (luaState.type(-1) == LuaType.BOOLEAN) {
+                                params.setTagForUnderAgeOfConsent(luaState.toBoolean(-1));
+                            } else {
+                                logMsg(ERROR_MSG, "options.underage (boolean) expected, got " + luaState.typeName(-1));
+                                return 0;
+                            }
+                        } else {
+                            logMsg(ERROR_MSG, "Invalid option '" + key + "'");
+                            return 0;
+                        }
+
+                        if (key.equals("debug")) {
+                            ConsentDebugSettings.Builder debugSettings = new ConsentDebugSettings.Builder(CoronaEnvironment.getApplicationContext());
+                            if (luaState.type(-1) == LuaType.TABLE) {
+                                luaState.getField(-1, "geography");
+                                if(luaState.isString(-1)){
+                                    if(luaState.toString(-1) == "EEA"){
+                                        debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA);
+                                    }else if(luaState.toString(-1) == "NotEEA"){
+                                        debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA);
+                                    }else{
+                                        debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_DISABLED);
+                                    }
+                                }
+                                luaState.pop(1);
+                                luaState.getField(-1, "testDeviceIdentifiers");
+                                if(luaState.isTable(-1)){
+                                    int arrayLength = luaState.length(-1);
+                                    if (arrayLength > 0) {
+                                        for (int index = 1; index <= arrayLength; index++) {
+                                            // Push the next Lua array value onto the Lua stack.
+                                            luaState.rawGet(-1, index);
+                                            if(luaState.isString(-1)){
+                                                debugSettings.addTestDeviceHashedId(luaState.toString(-1));
+                                            }
+                                            luaState.pop(1);
+                                        }
+                                    }
+                                }
+                                luaState.pop(1);
+                            } else {
+                                logMsg(ERROR_MSG, "options.debug (table) expected, got " + luaState.typeName(-1));
+                                return 0;
+                            }
+                        } else {
+                            logMsg(ERROR_MSG, "Invalid option '" + key + "'");
+                            return 0;
+                        }
+                    }
+                } else {
+                    logMsg(ERROR_MSG, "options table expected, got " + luaState.typeName(1));
+                    return 0;
+                }
+            }
+            ConsentInformation consentInformation = UserMessagingPlatform.getConsentInformation(CoronaEnvironment.getApplicationContext());
+            consentInformation.requestConsentInfoUpdate(CoronaEnvironment.getCoronaActivity(),
+                params.build(),
+
+                new ConsentInformation.OnConsentInfoUpdateSuccessListener() {
+                    @Override
+                    public void onConsentInfoUpdateSuccess() {
+                        Map<String, Object> coronaEvent = new HashMap<>();
+                        coronaEvent.put(EVENT_PHASE_KEY, PHASE_REFRESHED);
+                        coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                        coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, false);
+                        dispatchLuaEvent(coronaEvent);
+                    }
+                },
+                new ConsentInformation.OnConsentInfoUpdateFailureListener() {
+                    @Override
+                    public void onConsentInfoUpdateFailure(@NonNull FormError formError) {
+                        Map<String, Object> coronaEvent = new HashMap<>();
+                        coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
+                        coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, formError.getMessage());
+                        coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                        coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
+                        dispatchLuaEvent(coronaEvent);
+                    }
+                }
+            );
+
+            return 0;
+        }
+    }
+
+    // [Lua] loadConsentForm(  )
+    private class LoadConsentForm implements NamedJavaFunction {
+        /**
+         * Gets the name of the Lua function as it would appear in the Lua script.
+         *
+         * @return Returns the name of the custom Lua function.
+         */
+        @Override
+        public String getName() {
+            return "loadConsentForm";
+        }
+
+        /**
+         * This method is called when the Lua function is called.
+         * <p>
+         * Warning! This method is not called on the main UI thread.
+         *
+         * @param luaState Reference to the Lua state.
+         *                 Needed to retrieve the Lua function's parameters and to return values back to Lua.
+         * @return Returns the number of values to be returned by the Lua function.
+         */
+        @Override
+        public int invoke(final LuaState luaState) {
+            functionSignature = "admob.loadConsentForm( )";
+
+            if (!isSDKInitialized()) {
+                return 0;
+            }
+            CoronaEnvironment.getCoronaActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    UserMessagingPlatform.loadConsentForm(
+                            CoronaEnvironment.getCoronaActivity(),
+                            new UserMessagingPlatform.OnConsentFormLoadSuccessListener() {
+                                @Override
+                                public void onConsentFormLoadSuccess(ConsentForm consentForm) {
+                                    umpForm = consentForm;
+                                    Map<String, Object> coronaEvent = new HashMap<>();
+                                    coronaEvent.put(EVENT_PHASE_KEY, PHASE_LOADED);
+                                    coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                                    coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, false);
+                                    dispatchLuaEvent(coronaEvent);
+                                }
+                            },
+                            new UserMessagingPlatform.OnConsentFormLoadFailureListener() {
+                                @Override
+                                public void onConsentFormLoadFailure(FormError formError) {
+                                    Map<String, Object> coronaEvent = new HashMap<>();
+                                    coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
+                                    coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, formError.getMessage());
+                                    coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                                    coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
+                                    dispatchLuaEvent(coronaEvent);
+                                }
+                            }
+                    );
+                }
+            });
+
+            return 0;
+        }
+    }
+
+    // [Lua] showConsentForm(  )
+    private class ShowConsentForm implements NamedJavaFunction {
+        /**
+         * Gets the name of the Lua function as it would appear in the Lua script.
+         *
+         * @return Returns the name of the custom Lua function.
+         */
+        @Override
+        public String getName() {
+            return "showConsentForm";
+        }
+
+        /**
+         * This method is called when the Lua function is called.
+         * <p>
+         * Warning! This method is not called on the main UI thread.
+         *
+         * @param luaState Reference to the Lua state.
+         *                 Needed to retrieve the Lua function's parameters and to return values back to Lua.
+         * @return Returns the number of values to be returned by the Lua function.
+         */
+        @Override
+        public int invoke(final LuaState luaState) {
+            functionSignature = "admob.showConsentForm( )";
+
+            if (!isSDKInitialized()) {
+                return 0;
+            }
+            ConsentInformation consentInformation = UserMessagingPlatform.getConsentInformation(CoronaEnvironment.getApplicationContext());
+            if(umpForm != null){
+                CoronaEnvironment.getCoronaActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        umpForm.show(
+                                CoronaEnvironment.getCoronaActivity(),
+                                new ConsentForm.OnConsentFormDismissedListener() {
+                                    @Override
+                                    public void onConsentFormDismissed(@Nullable FormError formError) {
+                                        if(formError == null){
+                                            Map<String, Object> coronaEvent = new HashMap<>();
+                                            coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
+                                            coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, formError.getMessage());
+                                            coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                                            coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
+                                            dispatchLuaEvent(coronaEvent);
+                                        }else{
+                                            Map<String, Object> coronaEvent = new HashMap<>();
+                                            coronaEvent.put(EVENT_PHASE_KEY, PHASE_HIDDEN);
+                                            coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                                            coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, false);
+                                            dispatchLuaEvent(coronaEvent);
+                                        }
+
+                                    }
+                                });
+                    }
+                });
+            }else{
+                Map<String, Object> coronaEvent = new HashMap<>();
+                coronaEvent.put(EVENT_PHASE_KEY, PHASE_FAILED);
+                coronaEvent.put(CoronaLuaEvent.ERRORTYPE_KEY, "Consent Form not Loaded");
+                coronaEvent.put(EVENT_TYPE_KEY, TYPE_UMP);
+                coronaEvent.put(CoronaLuaEvent.ISERROR_KEY, true);
+                dispatchLuaEvent(coronaEvent);
+            }
+
+            return 0;
+        }
+    }
+
+    // [Lua] getConsentFormStatus(  )
+    private class GetConsentFormStatus implements NamedJavaFunction {
+        /**
+         * Gets the name of the Lua function as it would appear in the Lua script.
+         *
+         * @return Returns the name of the custom Lua function.
+         */
+        @Override
+        public String getName() {
+            return "getConsentFormStatus";
+        }
+
+        /**
+         * This method is called when the Lua function is called.
+         * <p>
+         * Warning! This method is not called on the main UI thread.
+         *
+         * @param luaState Reference to the Lua state.
+         *                 Needed to retrieve the Lua function's parameters and to return values back to Lua.
+         * @return Returns the number of values to be returned by the Lua function.
+         */
+        @Override
+        public int invoke(final LuaState luaState) {
+            functionSignature = "admob.getConsentFormStatus( )";
+
+            if (!isSDKInitialized()) {
+                return 0;
+            }
+            ConsentInformation consentInformation = UserMessagingPlatform.getConsentInformation(CoronaEnvironment.getApplicationContext());
+
+            if(consentInformation.isConsentFormAvailable()){
+                luaState.pushString("available");
+            }else {
+                luaState.pushString("unavailable");
+            }
+
+            if(consentInformation.getConsentStatus() == ConsentInformation.ConsentStatus.OBTAINED){
+                luaState.pushString("obtained");
+            }else if(consentInformation.getConsentStatus() == ConsentInformation.ConsentStatus.NOT_REQUIRED){
+                luaState.pushString("notRequired");
+            }else if(consentInformation.getConsentStatus() == ConsentInformation.ConsentStatus.REQUIRED){
+                luaState.pushString("required");
+            }else{
+                luaState.pushString("unknown");
+            }
+
+            return 2;
         }
     }
 

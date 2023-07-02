@@ -1,0 +1,11 @@
+dependencies {
+	implementation 'com.google.android.gms:play-services-ads:21.5.0'
+	implementation 'com.google.android.ump:user-messaging-platform:2.0.0'
+	implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava' // Googles ducktape solution
+	//^https://stackoverflow.com/questions/56639529/duplicate-class-com-google-common-util-concurrent-listenablefuture-found-in-modu
+}
+
+android.defaultConfig {
+    minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 15, 19)
+}
+ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:15, 19)

@@ -81,6 +81,7 @@ local iReady
 local bReady
 local riReady
 local aReady
+local fReady
 local bannerLine
 local oldOrientation
 
@@ -96,11 +97,11 @@ if platformName == "Android" then
 elseif platformName == "iPhone OS" then
   appId = "ca-app-pub-7897780601981890~3573459965"
   adUnits = {
-    interstitial="ca-app-pub-7897780601981890/6526926360",
-    rewardedVideo="ca-app-pub-7897780601981890/8003659567",
-    banner="ca-app-pub-7897780601981890/5050193163",
-    appOpen="ca-app-pub-3940256099942544/5662855259",
-    rewardedInterstitial="ca-app-pub-3940256099942544/6978759866"
+    interstitial="ca-app-pub-3940256099942544/1033173712",
+    rewardedVideo="ca-app-pub-3940256099942544/5224354917",
+    banner="ca-app-pub-3940256099942544/6300978111",
+    appOpen="ca-app-pub-3940256099942544/3419835294",
+    rewardedInterstitial="ca-app-pub-3940256099942544/5354046379"
   }
 else
   print "Unsupported platform"
@@ -123,12 +124,18 @@ local admobListener = function(event)
       setGreen(riReady)
     elseif (event.type == "appOpen") then
       setGreen(aReady)
+    elseif (event.type == "ump") then
+      setGreen(fReady)
     end
   end
 end
 
 -- initialize AdMob
 if admob then admob.init(admobListener, {appId=appId, testMode=true, videoAdVolume = 0.1}) end
+
+-- Set UMP Form for debug
+if admob then admob.updateConsentForm ({ underage=true ,debug= { geography = "EEA", testDeviceIdentifiers={"37043AAA-6436-57F6-A5DF-3E12E4018E80"} } }) end
+
 
 testModeButton = widget.newButton {
   label = "Test mode: ON",
@@ -140,6 +147,7 @@ testModeButton = widget.newButton {
 
     setRed(iReady)
     setRed(bReady)
+    
 
     if testMode then
       testModeButton:setLabel("Test mode: ON")
@@ -358,6 +366,48 @@ local showBannerButtonBLine = widget.newButton {
   end
 }
 
+local formLabel = display.newText {
+  text = "F O R M",
+  font = display.systemFontBold,
+  fontSize = 18,
+}
+formLabel:setTextColor(1)
+
+local loadFormButton = widget.newButton {
+  label = "Load Form",
+  fontSize = 14,
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    admob.loadConsentForm()
+  end
+}
+
+local showFormButton = widget.newButton {
+  label = "Show Form",
+  fontSize = 14,
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    admob.showConsentForm()
+  end
+}
+
+local getStatusFormButton = widget.newButton {
+  label = "Print Consent Status",
+  fontSize = 14,
+  width = 100,
+  height = 40,
+  labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
+  onRelease = function(event)
+    local formStatus, consentStatus = admob.getConsentFormStatus()
+    logString = "\nForm Status: - - - - - - - - - \n" .. "Form Status:".. formStatus .."  Consent Status: "..consentStatus
+    eventDataTextBox.text = logString .. eventDataTextBox.text
+  end
+}
+
 
 iReady = display.newCircle(10, 10, 6)
 iReady.strokeWidth = 2
@@ -383,6 +433,11 @@ rReady = display.newCircle(10, 10, 6)
 rReady.strokeWidth = 2
 rReady:setStrokeColor(0)
 setRed(rReady)
+
+fReady = display.newCircle(10, 10, 6)
+fReady.strokeWidth = 2
+fReady:setStrokeColor(0)
+setRed(fReady)
 
 -- --------------------------------------------------------------------------
 -- -- device orientation handling
@@ -469,27 +524,37 @@ local layoutDisplayObjects = function(orientation)
 
   bannerBG.x, bannerBG.y = display.contentCenterX, 260
 
-  bannerLabel.x = display.contentCenterX
+  bannerLabel.x = display.contentCenterX + 80
   bannerLabel.y = 260
 
   bReady.x = display.contentCenterX + 140
   bReady.y = 260
   setRed(bReady)
 
-  loadBannerButton.x = display.contentCenterX - 50
+  loadBannerButton.x = display.contentCenterX + 50
   loadBannerButton.y = bannerLabel.y + 30
 
-  hideBannerButton.x = display.contentCenterX + 50
+  hideBannerButton.x = display.contentCenterX + 120
   hideBannerButton.y = bannerLabel.y + 30
 
-  showBannerButtonB.x = display.contentCenterX
+  showBannerButtonB.x = display.contentCenterX + 70
   showBannerButtonB.y = bannerLabel.y + 50
 
-  showBannerButtonT.x = display.contentCenterX - 100
+  showBannerButtonT.x = display.contentCenterX + 20
   showBannerButtonT.y = bannerLabel.y + 50
 
-  showBannerButtonBLine.x = display.contentCenterX + 100
+  showBannerButtonBLine.x = display.contentCenterX + 130
   showBannerButtonBLine.y = bannerLabel.y + 50
+  
+  formLabel.x, formLabel.y = display.contentCenterX - 80, 260
+  
+  loadFormButton.x, loadFormButton.y = display.contentCenterX - 30, 290
+  
+  showFormButton.x, showFormButton.y = display.contentCenterX - 110, 290
+  
+  getStatusFormButton.x, getStatusFormButton.y = display.contentCenterX - 80, 310
+  
+  fReady.x, fReady.y = display.contentCenterX - 140, 260
 end
 
 local onOrientationChange = function(event)
