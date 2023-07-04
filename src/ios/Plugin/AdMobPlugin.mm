@@ -1432,7 +1432,7 @@ AdMobPlugin::updateConsentForm(lua_State *L)
             if(lua_isstring(L, -1)){
                 if(UTF8IsEqual(lua_tostring(L, -1), "EEA")){
                     debugSettings.geography = UMPDebugGeographyEEA;
-                }else if(UTF8IsEqual(lua_tostring(L, -1), "NotEEA")){
+                }else if(UTF8IsEqual(lua_tostring(L, -1), "notEEA")){
                     debugSettings.geography = UMPDebugGeographyNotEEA;
                 }else{
                     debugSettings.geography = UMPDebugGeographyDisabled;

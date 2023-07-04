@@ -311,7 +311,7 @@ local loadBannerButton = widget.newButton {
   labelColor = { default={ 0, 0, 0 }, over={ 0.7, 0.7, 0.7 } },
   onRelease = function(event)
     setRed(bReady)
-    admob.load("banner", {adUnitId=adUnits.banner, testMode=testMode, designedForFamilies=true, childSafe=true, hasUserConsent=false})
+    admob.load("banner", {adUnitId=adUnits.banner})
   end
 }
 

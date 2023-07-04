@@ -1712,7 +1712,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 if(luaState.isString(-1)){
                                     if(luaState.toString(-1) == "EEA"){
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA);
-                                    }else if(luaState.toString(-1) == "NotEEA"){
+                                    }else if(luaState.toString(-1) == "notEEA"){
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA);
                                     }else{
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_DISABLED);
