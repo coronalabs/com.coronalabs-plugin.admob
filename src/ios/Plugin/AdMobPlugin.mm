@@ -1540,6 +1540,7 @@ AdMobPlugin::loadConsentForm(lua_State *L)
             };
             [admobDelegate dispatchLuaEvent:coronaEvent];
             adInstance.isLoaded = true;
+            admobObjects[@"ump"] = adInstance;
         }
      }];
     
