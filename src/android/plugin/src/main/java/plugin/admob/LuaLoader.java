@@ -1700,12 +1700,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 logMsg(ERROR_MSG, "options.underage (boolean) expected, got " + luaState.typeName(-1));
                                 return 0;
                             }
-                        } else {
-                            logMsg(ERROR_MSG, "Invalid option '" + key + "'");
-                            return 0;
-                        }
-
-                        if (key.equals("debug")) {
+                        }else if (key.equals("debug")) {
                             ConsentDebugSettings.Builder debugSettings = new ConsentDebugSettings.Builder(CoronaEnvironment.getApplicationContext());
                             if (luaState.type(-1) == LuaType.TABLE) {
                                 luaState.getField(-1, "geography");
