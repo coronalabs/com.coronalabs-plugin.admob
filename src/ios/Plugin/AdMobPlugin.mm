@@ -339,6 +339,17 @@ AdMobPlugin::init(lua_State *L)
 		return 0;
 	}
 	
+    //BY-ME Zytoona.AEZ	
+    // calculate the Corona->device coordinate ratio
+    // we use Corona's built-in point conversion to take advantage of any device specific logic in the Corona core
+    // we also need to re-calculate this value on every load as the ratio can change between orientation changes
+    CGPoint point1 = {0, 0};
+    CGPoint point2 = {1000, 1000};
+    CGPoint uikitPoint1 = [admobDelegate.coronaRuntime coronaPointToUIKitPoint: point1];
+    CGPoint uikitPoint2 = [admobDelegate.coronaRuntime coronaPointToUIKitPoint: point2];
+    CGFloat yRatio = (uikitPoint2.y - uikitPoint1.y) / 1000.0;
+    admobObjects[Y_RATIO_KEY] = @(yRatio);
+    
 	bool testMode = false;
 	CGFloat videoAdVolume = 1.0;
 	
@@ -1234,25 +1245,39 @@ AdMobPlugin::height(lua_State *L)
 	else {
 		adUnitId = admobObjects[@(TYPE_BANNER)];
 	}
+
+    //BY-ME Zytoona.AEZ	
+
+//	if (adUnitId == nil) {
+//		logMsg(L, WARNING_MSG, @"Banner not loaded");
+//		return 0;
+//	}
 	
-	if (adUnitId == nil) {
-		logMsg(L, WARNING_MSG, @"Banner not loaded");
-		return 0;
-	}
-	
-	double height = 0;
-	
-	CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
-	
-	if (adInstance != nil) {
-		GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
-		if (banner == nil) {
-			logMsg(L, ERROR_MSG, MsgFormat(@"Banner not loaded for adUnitId '%@'", adUnitId));
-		}
-		else {
-			height = floor(banner.frame.size.height / [admobObjects[Y_RATIO_KEY] floatValue]);
-		}
-	}
+    double height = 0;
+    bool validHeight = false;
+    if (adUnitId != nil) {
+        CoronaAdMobAdInstance *adInstance = admobObjects[adUnitId];
+        if (adInstance != nil) {
+            GADBannerView *banner = (GADBannerView *)adInstance.adInstance;
+            if (banner == nil) {
+                logMsg(L, ERROR_MSG, MsgFormat(@"Banner not loaded for adUnitId '%@'", adUnitId));
+            }
+            else {
+                height = floor(banner.frame.size.height / [admobObjects[Y_RATIO_KEY] floatValue]);
+                validHeight = true;
+            }
+        }
+    }
+
+    if (!validHeight) {
+        logMsg(L, WARNING_MSG, @"Height taken from const value");
+        GADAdSize adSize = GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(library.coronaViewController.view.frame.size.width);
+        CGSize cgsize = CGSizeFromGADAdSize(adSize);
+        NSLog(@"admobPlugin,cgsize.height %f",cgsize.height);
+        NSLog(@"[admobObjects[Y_RATIO_KEY] floatValue] %f",[admobObjects[Y_RATIO_KEY] floatValue]);
+        height = floor(cgsize.height / [admobObjects[Y_RATIO_KEY] floatValue]);
+        NSLog(@"height %f",height);
+    }
 	
 	lua_pushnumber(L, height);
 	

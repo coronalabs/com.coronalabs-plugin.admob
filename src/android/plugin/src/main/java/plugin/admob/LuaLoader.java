@@ -639,6 +639,18 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                 dispatchLuaEvent(coronaEvent);
                             }
                         });
+                        //BY-ME: AEZ.Zytoona
+                        admobObjects.put(HAS_RECEIVED_INIT_EVENT_KEY, true);
+                        // calculate the Corona->device coordinate ratio
+                        // we use Corona's built-in point conversion to take advantage of any device specific logic in the Corona core
+                        // we also need to re-calculate this value on every load as the ratio changes between orientation changes
+                        Point point1 = coronaActivity.convertCoronaPointToAndroidPoint(0, 0);
+                        Point point2 = coronaActivity.convertCoronaPointToAndroidPoint(1000, 1000);
+                        double yRatio = 1.0;
+                        if (point1 != null && point2 != null) {
+                            yRatio = (double) (point2.y - point1.y) / 1000.0;
+                        }
+                        admobObjects.put(Y_RATIO_KEY, yRatio);
                     }
                 });
             }
@@ -1544,7 +1556,16 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         public String getName() {
             return "height";
         }
+        //BY-ME: AEZ.Zytoona
+        public AdSize getAdaptiveAdSize(Activity activity) {
+            // Step 2 - Determine the screen width (less decorations) to use for the ad width.
+            Display display = activity.getWindowManager().getDefaultDisplay();
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            display.getMetrics(outMetrics);
 
+            // Step 3 - Get adaptive ad size and return for setting on the ad view.
+            return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, AdSize.FULL_WIDTH);
+        }
         /**
          * This method is called when the Lua function is called.
          * <p>
@@ -1557,10 +1578,11 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
         @Override
         public int invoke(final LuaState luaState) {
             functionSignature = "admob.height( [options] )";
-
-            if (!isSDKInitialized()) {
-                return 0;
-            }
+    //BY-ME: AEZ.Zytoona	
+    //BYME: if no banner do static calculation for banner height
+//            if (!isSDKInitialized()) {
+//                return 0;
+//            }
 
             // check number of args
             int nargs = luaState.getTop();
@@ -1615,6 +1637,9 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                             }
 
                             double result = 0.0;
+							    //BYME: 
+                            boolean resultValid = false;
+
 
                             if (adUnitId == null) {
                                 logMsg(WARNING_MSG, "Banner not loaded");
@@ -1624,10 +1649,16 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                     AdSize size = banner.getAdSize();
                                     if (size != null) {
                                         result = size.getHeightInPixels(coronaActivity) / (double) admobObjects.get(Y_RATIO_KEY);
+										//BYME: moved this calculation to init from	banner load method
+                                        resultValid = true;
+                                        Log.i(CORONA_TAG, "banner height, from loaded banner size:"+result);
                                     }
                                 }
                             }
-
+                            if(!resultValid) {
+                                result = getAdaptiveAdSize(coronaActivity).getHeightInPixels(coronaActivity) / (double) admobObjects.get(Y_RATIO_KEY);
+                                Log.i(CORONA_TAG,"banner height, from Api size:"+result);
+                            }
                             // return result to FutureTask
                             return result;
                         }
@@ -1640,6 +1671,9 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
+		      //BYME: 
+                height = getAdaptiveAdSize(coronaActivity).getHeightInPixels(coronaActivity) / (double) admobObjects.get(Y_RATIO_KEY);
+                Log.i(CORONA_TAG,"had exception get API size:" + height);
             }
 
             luaState.pushNumber(height);
