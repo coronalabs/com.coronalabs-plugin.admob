@@ -6,3 +6,9 @@ build/
 BuiltPlugin/
 src/ios/libplugin_admob.a
 .DS_Store
+plugins/2020.3607/iphone/
+plugins/2023.3607/iphone-sim/
+plugins/2020.3686/iphone/
+plugins/2023.3686/iphone-sim/
+src/ios/Pods/
+src/ios/EmbeddedFrameworks/
