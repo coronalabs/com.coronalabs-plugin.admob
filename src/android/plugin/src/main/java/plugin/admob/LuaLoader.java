@@ -9,24 +9,21 @@
 
 package plugin.admob;
 
-import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
-import static java.lang.Math.ceil;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.ansca.corona.CoronaActivity;
 import com.ansca.corona.CoronaEnvironment;
@@ -80,6 +77,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+import static java.lang.Math.ceil;
+
 // Plugin imports
 
 /**
@@ -91,7 +94,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static final String PLUGIN_NAME = "plugin.admob";
-    private static final String PLUGIN_VERSION = "1.5.0";
+    private static final String PLUGIN_VERSION = "3.4.0";
     private static final String PLUGIN_SDK_VERSION = "0";//getVersionString();
 
     private static final String EVENT_NAME = "adsRequest";
@@ -526,7 +529,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
             if (luaState.isTable(-1)) {
                 luaState.getField(-1, "target");
                 if(luaState.isString(-1)){
-                    if(luaState.toString(-1) == "amazon"){
+                    if(luaState.toString(-1).equals("amazon")){
                         isAmazon = true;
                     }
                 }
@@ -1739,9 +1742,9 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                             if (luaState.type(-1) == LuaType.TABLE) {
                                 luaState.getField(-1, "geography");
                                 if(luaState.isString(-1)){
-                                    if(luaState.toString(-1) == "EEA"){
+                                    if(luaState.toString(-1).equals("EEA")){
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA);
-                                    }else if(luaState.toString(-1) == "notEEA"){
+                                    }else if(luaState.toString(-1).equals("notEEA")){
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_NOT_EEA);
                                     }else{
                                         debugSettings.setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_DISABLED);
@@ -1762,6 +1765,7 @@ public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
                                         }
                                     }
                                 }
+                                params.setConsentDebugSettings(debugSettings.build());
                                 luaState.pop(1);
                             } else {
                                 logMsg(ERROR_MSG, "options.debug (table) expected, got " + luaState.typeName(-1));

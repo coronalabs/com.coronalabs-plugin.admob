@@ -184,6 +184,8 @@ android {
     lintOptions {
         isCheckReleaseBuilds = false
     }
+    namespace = "plugin.admob"
+
     compileSdkVersion(33 )
     defaultConfig {
         applicationId = coronaAppPackage
