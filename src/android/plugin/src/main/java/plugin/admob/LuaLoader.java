@@ -91,8 +91,8 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class LuaLoader implements JavaFunction, CoronaRuntimeListener {
     private static final String PLUGIN_NAME = "plugin.admob";
-    private static final String PLUGIN_VERSION = "1.6.0";
-    private static final String PLUGIN_SDK_VERSION = "0";//getVersionString();
+    private static final String PLUGIN_VERSION = "1.6.1";
+    private static final String PLUGIN_SDK_VERSION = MobileAds.getVersion().toString();
 
     private static final String EVENT_NAME = "adsRequest";
     private static final String PROVIDER_NAME = "admob";
