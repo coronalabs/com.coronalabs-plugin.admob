@@ -1,4 +1,4 @@
-rootProject.name = "AdMob Plugin"
+rootProject.name = "Corona Native Android"
 include("app", "plugin")
 
 if (settings.hasProperty('coronaExpansionFileName')) {

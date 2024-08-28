@@ -1,48 +1,78 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 32
-
+    compileSdk 34
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 32
+        namespace = "plugin.admob"
+        minSdkVersion 21
+        versionCode 1
+        versionName "1.0"
     }
-}
 
-afterEvaluate {
-    generateReleaseBuildConfig.enabled = false
-    generateDebugBuildConfig.enabled = false
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
 }
 
 dependencies {
     implementation ':Corona@aar'
-    implementation 'com.google.android.gms:play-services-ads:22.5.0'
-    implementation 'com.google.android.ump:user-messaging-platform:2.1.0'
+    implementation 'com.google.android.gms:play-services-ads:23.3.0'
+    implementation 'com.google.android.ump:user-messaging-platform:3.0.0'
+    implementation 'androidx.fragment:fragment:1.3.0'
 }
 
-task exportAARToThePluginBinary {
-    group 'Solar2Dev'
-    dependsOn assemble
+def buildDirectory = getLayout().getBuildDirectory().asFile.get()
+tasks.register("extractPluginJar") {
+    group "Solar2Dev"
+    dependsOn assembleRelease
     doLast {
         copy {
             from {
-                zipTree("$buildDir/outputs/aar/${project.name}-release.aar").matching {
+                zipTree("$buildDirectory/outputs/aar/${project.name}-release.aar").matching {
                     include 'classes.jar'
                 }.singleFile
             }
-            into "../../../plugins/2020.3607/android/"
-            rename "classes.jar", "plugin.admob.jar"
+            into "$buildDirectory/outputs/"
+
+            // Directly use the namespace as a string
+            String packageName = android.namespace
+            rename "classes.jar", "${packageName}.jar"
         }
     }
 }
 
-task createDataTgz(type: Tar) {
-    group 'Solar2Dev'
-    from "../../../plugins/2020.3607/android/"
-    destinationDirectory = file("$buildDir/outputs")
-    archiveFileName = 'data.tgz'
-    compression = Compression.GZIP
-    dependsOn exportAARToThePluginBinary
-}
+// This creates archive for plugin so it can be used by Simulator from build.settings
+// by deploying it directly to Solar2DPlugins directory. This is first in line location
+// to retrieve plugins, so will overshadow online directory/store downloads.
+def providerId = 'com.solar2d'
+tasks.register("deployToLocalSolar2DRepo", Tar) {
+    group "Solar2Dev"
 
-assemble.finalizedBy(createDataTgz)
+    dependsOn assembleRelease
+
+    File pluginManifestFile = file("src/main/AndroidManifest.xml")
+    String manifestContents = pluginManifestFile.text
+    def pluginManifestXml = new XmlSlurper().parseText(manifestContents)
+    String packageName = pluginManifestXml.@package.toString()
+
+    compression = Compression.GZIP
+    archiveFileName = "data.tgz"
+    def rootS2DP
+    if (System.env.APP_DATA) {
+        rootS2DP = System.env.APP_DATA
+    } else {
+        rootS2DP = System.env.HOME
+    }
+    def dst = file("$rootS2DP/Solar2DPlugins/$providerId/$packageName/android")
+    destinationDirectory = dst
+
+    into("/") {
+        from("$buildDirectory/outputs/aar")
+        include("${project.name}-release.aar")
+    }
+    doLast {
+        println("\n\n\n== !!! IMPORTANT !!! ==\nMake sure to delete plugin when done: $dst\nThis plugin will override any Solar2Directory plugin, or plugin from any other source")
+    }
+}

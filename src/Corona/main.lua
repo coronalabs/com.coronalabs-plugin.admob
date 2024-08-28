@@ -88,8 +88,8 @@ local oldOrientation
 if platformName == "Android" then
   appId = "ca-app-pub-7897780601981890~1957125968"
   adUnits = {
-    interstitial="ca-app-pub-7897780601981890/4910592366",
-    rewardedVideo="ca-app-pub-7897780601981890/6354495960",
+    interstitial="ca-app-pub-3940256099942544/1033173712",
+    rewardedVideo="ca-app-pub-3940256099942544/5224354917",
     banner="ca-app-pub-3940256099942544/6300978111",
     appOpen="ca-app-pub-3940256099942544/3419835294",
     rewardedInterstitial="ca-app-pub-3940256099942544/5354046379"
