@@ -15,6 +15,12 @@ local metadata =
             },
             applicationChildElements =
             {
+                [[
+                    <property
+                    android:name="android.adservices.AD_SERVICES_CONFIG" 
+                    android:resource="@xml/gma_ad_services_config"
+                    tools:replace="android:resource"/>
+                ]],
             }
         }
     },
