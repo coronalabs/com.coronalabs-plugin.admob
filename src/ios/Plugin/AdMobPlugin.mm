@@ -391,7 +391,7 @@ AdMobPlugin::init(lua_State *L)
 	}
 	
 	// log plugin version to device log
-	NSLog(@"%s: %s (SDK: %@)", PLUGIN_NAME, PLUGIN_VERSION, GADMobileAds.sharedInstance.sdkVersion);
+    NSLog(@"%s: %s (SDK: %@)", PLUGIN_NAME, PLUGIN_VERSION, @"11.8.0");
 	
 	// save values for future use
 	admobObjects[TESTMODE_KEY] = @(testMode);

@@ -12,6 +12,9 @@
 #import <GoogleMobileAds/GADAudioVideoManager.h>
 #import <GoogleMobileAds/GADInitializationStatus.h>
 #import <GoogleMobileAds/GADRequestConfiguration.h>
+#import <GoogleMobileAds/Mediation/GADVersionNumber.h>
+#import <GoogleMobileAds/Request/GADSignal.h>
+#import <GoogleMobileAds/Request/GADSignalRequest.h>
 
 /// A block called with the initialization status when [GADMobileAds startWithCompletionHandler:]
 /// completes or times out.
@@ -21,14 +24,17 @@ typedef void (^GADInitializationCompletionHandler)(GADInitializationStatus *_Non
 /// during presentation, or nil otherwise.
 typedef void (^GADAdInspectorCompletionHandler)(NSError *_Nullable error);
 
+/// Completion handler for signal request creation. Returns a signal or an error.
+typedef void (^GADSignalCompletionHandler)(GADSignal *_Nullable signal, NSError *_Nullable error);
+
 /// Google Mobile Ads SDK settings.
 @interface GADMobileAds : NSObject
 
 /// Returns the shared GADMobileAds instance.
 + (nonnull GADMobileAds *)sharedInstance;
 
-/// Returns the version of the SDK.
-@property(nonatomic, nonnull, readonly) NSString *sdkVersion;
+/// Returns the Google Mobile Ads SDK's version number.
+@property(nonatomic, readonly) GADVersionNumber versionNumber;
 
 /// The application's audio volume. Affects audio volumes of all ads relative to other audio output.
 /// Valid ad volume values range from 0.0 (silent) to 1.0 (current device volume). Defaults to 1.0.
@@ -88,14 +94,23 @@ typedef void (^GADAdInspectorCompletionHandler)(NSError *_Nullable error);
 /// to launch Ad Inspector. Set
 /// GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers to enable test mode on
 /// this device.
-/// @param viewController A view controller to present Ad Inspector.
+/// @param viewController A view controller to present Ad Inspector. If nil, uses the top view
+/// controller of the app's main window.
 /// @param completionHandler A handler to execute when Ad Inspector is closed.
-- (void)presentAdInspectorFromViewController:(nonnull UIViewController *)viewController
+- (void)presentAdInspectorFromViewController:(nullable UIViewController *)viewController
                            completionHandler:
                                (nullable GADAdInspectorCompletionHandler)completionHandler;
 
 /// Registers a web view with the Google Mobile Ads SDK to improve in-app ad monetization of ads
 /// within this web view.
 - (void)registerWebView:(nonnull WKWebView *)webView;
+
+/// Generates a signal that can be used as input in a server-to-server Google request. Calls
+/// completionHandler asynchronously on the main thread once a signal has been generated or
+/// when an error occurs.
+/// @param request The signal request that will be used to generate the signal.
+/// @param completionHandler A handler to execute when the signal generation is done.
++ (void)generateSignal:(nonnull GADSignalRequest *)request
+     completionHandler:(nonnull GADSignalCompletionHandler)completionHandler;
 
 @end

@@ -3,22 +3,21 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DB0B8A68299202170039E6D3 /* FirebaseAnalyticsSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A5C299202170039E6D3 /* FirebaseAnalyticsSwift.xcframework */; };
-		DB0B8A69299202170039E6D3 /* nanopb.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A5D299202170039E6D3 /* nanopb.xcframework */; };
-		DB0B8A6A299202170039E6D3 /* FirebaseCore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A5E299202170039E6D3 /* FirebaseCore.xcframework */; };
-		DB0B8A6B299202170039E6D3 /* FirebaseAnalytics.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A5F299202170039E6D3 /* FirebaseAnalytics.xcframework */; };
-		DB0B8A6C299202170039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A60299202170039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework */; };
-		DB0B8A6D299202170039E6D3 /* FBLPromises.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A61299202170039E6D3 /* FBLPromises.xcframework */; };
-		DB0B8A6E299202170039E6D3 /* FirebaseInstallations.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A62299202170039E6D3 /* FirebaseInstallations.xcframework */; };
-		DB0B8A6F299202170039E6D3 /* UserMessagingPlatform.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A63299202170039E6D3 /* UserMessagingPlatform.xcframework */; };
-		DB0B8A70299202170039E6D3 /* GoogleMobileAds.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A64299202170039E6D3 /* GoogleMobileAds.xcframework */; };
-		DB0B8A71299202170039E6D3 /* FirebaseCoreInternal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A65299202170039E6D3 /* FirebaseCoreInternal.xcframework */; };
-		DB0B8A72299202170039E6D3 /* GoogleUtilities.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A66299202170039E6D3 /* GoogleUtilities.xcframework */; };
-		DB0B8A73299202170039E6D3 /* GoogleAppMeasurement.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DB0B8A67299202170039E6D3 /* GoogleAppMeasurement.xcframework */; };
+		DBD0728E2CB1E9CE00B66187 /* FirebaseCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072852CB1E9CE00B66187 /* FirebaseCore.framework */; };
+		DBD0728F2CB1E9CE00B66187 /* FirebaseInstallations.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072872CB1E9CE00B66187 /* FirebaseInstallations.framework */; };
+		DBD072902CB1E9CE00B66187 /* GoogleAppMeasurement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072882CB1E9CE00B66187 /* GoogleAppMeasurement.framework */; };
+		DBD072912CB1E9CE00B66187 /* GoogleUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0728B2CB1E9CE00B66187 /* GoogleUtilities.framework */; };
+		DBD072922CB1E9CE00B66187 /* nanopb.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0728C2CB1E9CE00B66187 /* nanopb.framework */; };
+		DBD072932CB1E9CE00B66187 /* UserMessagingPlatform.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0728D2CB1E9CE00B66187 /* UserMessagingPlatform.framework */; };
+		DBD072942CB1E9CE00B66187 /* FBLPromises.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072832CB1E9CE00B66187 /* FBLPromises.framework */; };
+		DBD072952CB1E9CE00B66187 /* FirebaseAnalytics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072842CB1E9CE00B66187 /* FirebaseAnalytics.framework */; };
+		DBD072962CB1E9CE00B66187 /* FirebaseCoreInternal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072862CB1E9CE00B66187 /* FirebaseCoreInternal.framework */; };
+		DBD072972CB1E9CE00B66187 /* GoogleAppMeasurementIdentitySupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072892CB1E9CE00B66187 /* GoogleAppMeasurementIdentitySupport.framework */; };
+		DBD072982CB1E9CE00B66187 /* GoogleMobileAds.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0728A2CB1E9CE00B66187 /* GoogleMobileAds.framework */; };
 		F5590DC924D3E18C006C7D47 /* UIColor+HexString.m in Sources */ = {isa = PBXBuildFile; fileRef = F5590DC624D3E18C006C7D47 /* UIColor+HexString.m */; };
 		F5590DCA24D3E18C006C7D47 /* AdMobPlugin.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5590DC724D3E18C006C7D47 /* AdMobPlugin.mm */; };
 /* End PBXBuildFile section */
@@ -37,18 +36,17 @@
 
 /* Begin PBXFileReference section */
 		A4E253B6166D6FB300DCDC2C /* libplugin_admob.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libplugin_admob.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		DB0B8A5C299202170039E6D3 /* FirebaseAnalyticsSwift.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FirebaseAnalyticsSwift.xcframework; path = EmbeddedFrameworks/FirebaseAnalyticsSwift.xcframework; sourceTree = "<group>"; };
-		DB0B8A5D299202170039E6D3 /* nanopb.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = nanopb.xcframework; path = EmbeddedFrameworks/nanopb.xcframework; sourceTree = "<group>"; };
-		DB0B8A5E299202170039E6D3 /* FirebaseCore.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FirebaseCore.xcframework; path = EmbeddedFrameworks/FirebaseCore.xcframework; sourceTree = "<group>"; };
-		DB0B8A5F299202170039E6D3 /* FirebaseAnalytics.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FirebaseAnalytics.xcframework; path = EmbeddedFrameworks/FirebaseAnalytics.xcframework; sourceTree = "<group>"; };
-		DB0B8A60299202170039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = GoogleAppMeasurementIdentitySupport.xcframework; path = EmbeddedFrameworks/GoogleAppMeasurementIdentitySupport.xcframework; sourceTree = "<group>"; };
-		DB0B8A61299202170039E6D3 /* FBLPromises.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FBLPromises.xcframework; path = EmbeddedFrameworks/FBLPromises.xcframework; sourceTree = "<group>"; };
-		DB0B8A62299202170039E6D3 /* FirebaseInstallations.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FirebaseInstallations.xcframework; path = EmbeddedFrameworks/FirebaseInstallations.xcframework; sourceTree = "<group>"; };
-		DB0B8A63299202170039E6D3 /* UserMessagingPlatform.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = UserMessagingPlatform.xcframework; path = EmbeddedFrameworks/UserMessagingPlatform.xcframework; sourceTree = "<group>"; };
-		DB0B8A64299202170039E6D3 /* GoogleMobileAds.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = GoogleMobileAds.xcframework; path = EmbeddedFrameworks/GoogleMobileAds.xcframework; sourceTree = "<group>"; };
-		DB0B8A65299202170039E6D3 /* FirebaseCoreInternal.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = FirebaseCoreInternal.xcframework; path = EmbeddedFrameworks/FirebaseCoreInternal.xcframework; sourceTree = "<group>"; };
-		DB0B8A66299202170039E6D3 /* GoogleUtilities.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = GoogleUtilities.xcframework; path = EmbeddedFrameworks/GoogleUtilities.xcframework; sourceTree = "<group>"; };
-		DB0B8A67299202170039E6D3 /* GoogleAppMeasurement.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = GoogleAppMeasurement.xcframework; path = EmbeddedFrameworks/GoogleAppMeasurement.xcframework; sourceTree = "<group>"; };
+		DBD072832CB1E9CE00B66187 /* FBLPromises.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBLPromises.framework; path = EmbeddedFrameworks/FBLPromises.framework; sourceTree = "<group>"; };
+		DBD072842CB1E9CE00B66187 /* FirebaseAnalytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FirebaseAnalytics.framework; path = EmbeddedFrameworks/FirebaseAnalytics.framework; sourceTree = "<group>"; };
+		DBD072852CB1E9CE00B66187 /* FirebaseCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FirebaseCore.framework; path = EmbeddedFrameworks/FirebaseCore.framework; sourceTree = "<group>"; };
+		DBD072862CB1E9CE00B66187 /* FirebaseCoreInternal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FirebaseCoreInternal.framework; path = EmbeddedFrameworks/FirebaseCoreInternal.framework; sourceTree = "<group>"; };
+		DBD072872CB1E9CE00B66187 /* FirebaseInstallations.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FirebaseInstallations.framework; path = EmbeddedFrameworks/FirebaseInstallations.framework; sourceTree = "<group>"; };
+		DBD072882CB1E9CE00B66187 /* GoogleAppMeasurement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleAppMeasurement.framework; path = EmbeddedFrameworks/GoogleAppMeasurement.framework; sourceTree = "<group>"; };
+		DBD072892CB1E9CE00B66187 /* GoogleAppMeasurementIdentitySupport.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleAppMeasurementIdentitySupport.framework; path = EmbeddedFrameworks/GoogleAppMeasurementIdentitySupport.framework; sourceTree = "<group>"; };
+		DBD0728A2CB1E9CE00B66187 /* GoogleMobileAds.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleMobileAds.framework; path = EmbeddedFrameworks/GoogleMobileAds.framework; sourceTree = "<group>"; };
+		DBD0728B2CB1E9CE00B66187 /* GoogleUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GoogleUtilities.framework; path = EmbeddedFrameworks/GoogleUtilities.framework; sourceTree = "<group>"; };
+		DBD0728C2CB1E9CE00B66187 /* nanopb.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = nanopb.framework; path = EmbeddedFrameworks/nanopb.framework; sourceTree = "<group>"; };
+		DBD0728D2CB1E9CE00B66187 /* UserMessagingPlatform.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserMessagingPlatform.framework; path = EmbeddedFrameworks/UserMessagingPlatform.framework; sourceTree = "<group>"; };
 		F5590DC524D3E18C006C7D47 /* UIColor+HexString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIColor+HexString.h"; path = "Plugin/UIColor+HexString.h"; sourceTree = "<group>"; };
 		F5590DC624D3E18C006C7D47 /* UIColor+HexString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIColor+HexString.m"; path = "Plugin/UIColor+HexString.m"; sourceTree = "<group>"; };
 		F5590DC724D3E18C006C7D47 /* AdMobPlugin.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AdMobPlugin.mm; path = Plugin/AdMobPlugin.mm; sourceTree = "<group>"; };
@@ -61,18 +59,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DB0B8A68299202170039E6D3 /* FirebaseAnalyticsSwift.xcframework in Frameworks */,
-				DB0B8A6C299202170039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework in Frameworks */,
-				DB0B8A6D299202170039E6D3 /* FBLPromises.xcframework in Frameworks */,
-				DB0B8A6B299202170039E6D3 /* FirebaseAnalytics.xcframework in Frameworks */,
-				DB0B8A72299202170039E6D3 /* GoogleUtilities.xcframework in Frameworks */,
-				DB0B8A6E299202170039E6D3 /* FirebaseInstallations.xcframework in Frameworks */,
-				DB0B8A6A299202170039E6D3 /* FirebaseCore.xcframework in Frameworks */,
-				DB0B8A71299202170039E6D3 /* FirebaseCoreInternal.xcframework in Frameworks */,
-				DB0B8A6F299202170039E6D3 /* UserMessagingPlatform.xcframework in Frameworks */,
-				DB0B8A70299202170039E6D3 /* GoogleMobileAds.xcframework in Frameworks */,
-				DB0B8A73299202170039E6D3 /* GoogleAppMeasurement.xcframework in Frameworks */,
-				DB0B8A69299202170039E6D3 /* nanopb.xcframework in Frameworks */,
+				DBD0728E2CB1E9CE00B66187 /* FirebaseCore.framework in Frameworks */,
+				DBD0728F2CB1E9CE00B66187 /* FirebaseInstallations.framework in Frameworks */,
+				DBD072902CB1E9CE00B66187 /* GoogleAppMeasurement.framework in Frameworks */,
+				DBD072912CB1E9CE00B66187 /* GoogleUtilities.framework in Frameworks */,
+				DBD072922CB1E9CE00B66187 /* nanopb.framework in Frameworks */,
+				DBD072932CB1E9CE00B66187 /* UserMessagingPlatform.framework in Frameworks */,
+				DBD072942CB1E9CE00B66187 /* FBLPromises.framework in Frameworks */,
+				DBD072952CB1E9CE00B66187 /* FirebaseAnalytics.framework in Frameworks */,
+				DBD072962CB1E9CE00B66187 /* FirebaseCoreInternal.framework in Frameworks */,
+				DBD072972CB1E9CE00B66187 /* GoogleAppMeasurementIdentitySupport.framework in Frameworks */,
+				DBD072982CB1E9CE00B66187 /* GoogleMobileAds.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,18 +90,17 @@
 		A484110E15114F700074BD57 = {
 			isa = PBXGroup;
 			children = (
-				DB0B8A61299202170039E6D3 /* FBLPromises.xcframework */,
-				DB0B8A5F299202170039E6D3 /* FirebaseAnalytics.xcframework */,
-				DB0B8A5C299202170039E6D3 /* FirebaseAnalyticsSwift.xcframework */,
-				DB0B8A5E299202170039E6D3 /* FirebaseCore.xcframework */,
-				DB0B8A65299202170039E6D3 /* FirebaseCoreInternal.xcframework */,
-				DB0B8A62299202170039E6D3 /* FirebaseInstallations.xcframework */,
-				DB0B8A67299202170039E6D3 /* GoogleAppMeasurement.xcframework */,
-				DB0B8A60299202170039E6D3 /* GoogleAppMeasurementIdentitySupport.xcframework */,
-				DB0B8A64299202170039E6D3 /* GoogleMobileAds.xcframework */,
-				DB0B8A66299202170039E6D3 /* GoogleUtilities.xcframework */,
-				DB0B8A5D299202170039E6D3 /* nanopb.xcframework */,
-				DB0B8A63299202170039E6D3 /* UserMessagingPlatform.xcframework */,
+				DBD072832CB1E9CE00B66187 /* FBLPromises.framework */,
+				DBD072842CB1E9CE00B66187 /* FirebaseAnalytics.framework */,
+				DBD072852CB1E9CE00B66187 /* FirebaseCore.framework */,
+				DBD072862CB1E9CE00B66187 /* FirebaseCoreInternal.framework */,
+				DBD072872CB1E9CE00B66187 /* FirebaseInstallations.framework */,
+				DBD072882CB1E9CE00B66187 /* GoogleAppMeasurement.framework */,
+				DBD072892CB1E9CE00B66187 /* GoogleAppMeasurementIdentitySupport.framework */,
+				DBD0728A2CB1E9CE00B66187 /* GoogleMobileAds.framework */,
+				DBD0728B2CB1E9CE00B66187 /* GoogleUtilities.framework */,
+				DBD0728C2CB1E9CE00B66187 /* nanopb.framework */,
+				DBD0728D2CB1E9CE00B66187 /* UserMessagingPlatform.framework */,
 				A447B609165D72A6009EA762 /* Source */,
 				F54A40C01EE083A300AF417D /* CoronaNative */,
 				A484111A15114F700074BD57 /* Products */,
@@ -295,6 +291,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				DSTROOT = /tmp/plugin_library.dst;
 				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EmbeddedFrameworks",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				OTHER_LDFLAGS = "-ObjC";
@@ -310,6 +310,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				DSTROOT = /tmp/plugin_library.dst;
 				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/EmbeddedFrameworks",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				OTHER_LDFLAGS = "-ObjC";
