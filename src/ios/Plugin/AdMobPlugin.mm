@@ -604,7 +604,9 @@ AdMobPlugin::load(lua_State *L)
 	GADRequest *request = [GADRequest request];
 	
 	// set child safe flag
-	[GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment:childSafe];
+    if(childSafe){
+        [GADMobileAds.sharedInstance.requestConfiguration tagForChildDirectedTreatment];
+    }
 	
 	if(maxAdRaiting) {
 		[GADMobileAds.sharedInstance.requestConfiguration setMaxAdContentRating:maxAdRaiting];
