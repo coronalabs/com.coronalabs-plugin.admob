@@ -1,10 +1,10 @@
 dependencies {
-	implementation 'com.google.android.gms:play-services-ads:23.3.0'
-	implementation 'com.google.android.ump:user-messaging-platform:2.1.0'
-	implementation 'androidx.fragment:fragment:1.3.0'
+	implementation 'com.google.android.gms:play-services-ads:24.9.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
+    implementation 'androidx.fragment:fragment:1.3.0'
 }
 
 android.defaultConfig {
-    minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 15, 21)
+    minSdkVersion Math.max(minSdkVersion?.apiLevel ?: 15, 23)
 }
-ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:15, 21)
+ext["minSdkVersion"] = Math.max(ext.find("minSdkVersion")?:15, 23)

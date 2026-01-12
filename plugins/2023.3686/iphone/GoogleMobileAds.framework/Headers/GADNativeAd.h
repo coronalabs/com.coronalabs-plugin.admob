@@ -17,12 +17,14 @@
 #import <GoogleMobileAds/GADNativeAdImage.h>
 #import <GoogleMobileAds/GADResponseInfo.h>
 #import <GoogleMobileAds/GADVideoController.h>
+#import <GoogleMobileAds/GoogleMobileAdsDefines.h>
 #import <UIKit/UIKit.h>
 
 /// Native ad. To request this ad type, pass GADAdLoaderAdTypeNative
 /// (see GADAdLoaderAdTypes.h) to the |adTypes| parameter in GADAdLoader's initializer method. If
 /// you request this ad type, your delegate must conform to the GADNativeAdLoaderDelegate
 /// protocol.
+NS_SWIFT_NAME(NativeAd)
 @interface GADNativeAd : NSObject
 
 #pragma mark - Must be displayed if available
@@ -71,12 +73,21 @@
 /// Called when the ad is estimated to have earned money. Available for allowlisted accounts only.
 @property(nonatomic, nullable, copy) GADPaidEventHandler paidEventHandler;
 
+/// An identifier for a placement in reporting. This property must be set prior to associating the
+/// ad with a GADNativeAdView.
+@property(nonatomic, readwrite) int64_t placementID;
+
 /// Indicates whether custom Mute This Ad is available for the native ad.
-@property(nonatomic, readonly, getter=isCustomMuteThisAdAvailable) BOOL customMuteThisAdAvailable;
+@property(nonatomic, readonly, getter=isCustomMuteThisAdAvailable)
+    BOOL customMuteThisAdAvailable NS_SWIFT_NAME(isCustomMuteThisAdAvailable);
 
 /// An array of Mute This Ad reasons used to render customized mute ad survey. Use this array to
 /// implement your own Mute This Ad feature only when customMuteThisAdAvailable is YES.
 @property(nonatomic, readonly, nullable) NSArray<GADMuteThisAdReason *> *muteThisAdReasons;
+
+/// Reports the mute event with the mute reason selected by user. Use nil if no reason was selected.
+/// Call this method only if customMuteThisAdAvailable is YES.
+- (void)muteThisAdWithReason:(nullable GADMuteThisAdReason *)reason;
 
 /// Registers ad view, clickable asset views, and nonclickable asset views with this native ad.
 /// Media view shouldn't be registered as clickable.
@@ -87,30 +98,31 @@
        clickableAssetViews:
            (nonnull NSDictionary<GADNativeAssetIdentifier, UIView *> *)clickableAssetViews
     nonclickableAssetViews:
-        (nonnull NSDictionary<GADNativeAssetIdentifier, UIView *> *)nonclickableAssetViews;
+        (nonnull NSDictionary<GADNativeAssetIdentifier, UIView *> *)nonclickableAssetViews
+    GAD_DEPRECATED_MSG_ATTRIBUTE(
+        "This method is no longer supported and will be removed in a future version.");
 
 /// Unregisters ad view from this native ad. The corresponding asset views will also be
 /// unregistered.
-- (void)unregisterAdView;
-
-/// Reports the mute event with the mute reason selected by user. Use nil if no reason was selected.
-/// Call this method only if customMuteThisAdAvailable is YES.
-- (void)muteThisAdWithReason:(nullable GADMuteThisAdReason *)reason;
+- (void)unregisterAdView GAD_DEPRECATED_MSG_ATTRIBUTE(
+    "This method is no longer supported and will be removed in a future version.");
 
 @end
 
 #pragma mark - Protocol and constants
 
 /// The delegate of a GADAdLoader object implements this protocol to receive GADNativeAd ads.
+NS_SWIFT_NAME(NativeAdLoaderDelegate)
 @protocol GADNativeAdLoaderDelegate <GADAdLoaderDelegate>
 /// Called when a native ad is received.
 - (void)adLoader:(nonnull GADAdLoader *)adLoader didReceiveNativeAd:(nonnull GADNativeAd *)nativeAd;
 @end
 
-#pragma mark - Unified Native Ad View
+#pragma mark - Native Ad View
 
 /// Base class for native ad views. Your native ad view must be a subclass of this class and must
 /// call superclass methods for all overridden methods.
+NS_SWIFT_NAME(NativeAdView)
 @interface GADNativeAdView : UIView
 
 /// This property must point to the native ad object rendered by this ad view.

@@ -59,6 +59,7 @@
 		A4E2537F166AE3DC00DCDC2C /* Twitter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4E2537E166AE3DC00DCDC2C /* Twitter.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		C22C1E4B1E981D9000D74196 /* LaunchScreen.storyboardc in Resources */ = {isa = PBXBuildFile; fileRef = C22C1E4A1E981D9000D74196 /* LaunchScreen.storyboardc */; };
 		DB2CCB2D2991F5B200267BFF /* Blank.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB2CCB2C2991F5B200267BFF /* Blank.swift */; };
+		DBAB77052F14A1A300EB74DD /* App-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A484112915114F700074BD57 /* App-Info.plist */; };
 		DBD072A42CB204E500B66187 /* FBLPromises.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD072992CB204E500B66187 /* FBLPromises.framework */; };
 		DBD072A52CB204E500B66187 /* GoogleAppMeasurementIdentitySupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0729F2CB204E500B66187 /* GoogleAppMeasurementIdentitySupport.framework */; };
 		DBD072A62CB204E500B66187 /* FirebaseInstallations.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBD0729D2CB204E500B66187 /* FirebaseInstallations.framework */; };
@@ -454,6 +455,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DBAB77052F14A1A300EB74DD /* App-Info.plist in Resources */,
 				A484112C15114F700074BD57 /* InfoPlist.strings in Resources */,
 				F56457D91FA108F500EC8C29 /* Images.xcassets in Resources */,
 				A447B6671666FD02009EA762 /* MainWindow-iPad.xib in Resources */,

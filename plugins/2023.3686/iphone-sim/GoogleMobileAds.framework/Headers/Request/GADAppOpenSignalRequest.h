@@ -7,6 +7,8 @@
 
 #import <GoogleMobileAds/Request/GADSignalRequest.h>
 
+/// An app open signal request that can be used as input in server-to-server signal generation.
+NS_SWIFT_NAME(AppOpenSignalRequest)
 @interface GADAppOpenSignalRequest : GADSignalRequest
 
 /// Returns an app open signal request.

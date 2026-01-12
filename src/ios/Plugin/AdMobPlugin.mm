@@ -659,7 +659,7 @@ AdMobPlugin::load(lua_State *L)
 			[admobVendorDeviceID appendFormat:@"%02x", digest[i]];
 		}
 		
-        GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[GADSimulatorID, admobDeviceID, admobVendorDeviceID];
+        GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[admobDeviceID, admobVendorDeviceID];
 		NSLog(@"%s: Test mode active for device '%@'", PLUGIN_NAME, GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers);
 	}
 	
