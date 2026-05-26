@@ -366,7 +366,7 @@ AdMobPlugin::init(lua_State *L)
         return 0;
     }
     
-    NSLog(@"%s: %s (SDK: %@)", PLUGIN_NAME, PLUGIN_VERSION, @"11.8.0");
+    NSLog(@"%s: %s (SDK: %@)", PLUGIN_NAME, PLUGIN_VERSION, @"13.4.0");
     admobObjects[TESTMODE_KEY] = @(testMode);
     
     [GADMobileAds.sharedInstance disableSDKCrashReporting];
@@ -762,7 +762,6 @@ AdMobPlugin::load(lua_State *L)
         admobObjects[@(adUnitId)] = adInstance;
         [GADAppOpenAd loadWithAdUnitID:@(adUnitId)
                  request:[GADRequest request]
-                orientation:UIInterfaceOrientationPortrait
                      completionHandler:^(GADAppOpenAd *_Nullable appOpenAd, NSError *_Nullable error) {
              if (error) {
                  NSDictionary *coronaEvent = @{
